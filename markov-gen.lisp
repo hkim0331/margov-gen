@@ -57,12 +57,12 @@
          do (progn (write-char char out)
                    (if (char= char #\。) (write-char #\Newline out)))))))
 
-;; FIXME: 終了条件が良くない。(string= "" line)では空行でループが終わってしまう。
 (defun make-n-gram-from-file (infile &optional (n 2))
   "infile の各行は句点（。）で終了していること。"
   (with-open-file (in infile)
-    (loop for line = (read-line in nil) until (string= "" line)
-         do (append-to-file (n-gram line n)))))
+    (loop for line = (read-line in nil) while line
+       do (unless (string= "" line)
+            (append-to-file (n-gram line n))))))
 
 (defvar *n-gram* nil)
 
@@ -95,5 +95,5 @@
 (make-n-gram-from-file "infile.txt")
 (load-from-file)
 (markov-gen "親")
-(markov-gen "こ")
-(markov-gen "な")
+(markov-gen "あ")
+(markov-gen "小")
