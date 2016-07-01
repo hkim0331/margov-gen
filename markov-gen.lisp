@@ -57,6 +57,7 @@
          do (progn (write-char char out)
                    (if (char= char #\。) (write-char #\Newline out)))))))
 
+;; FIXME: 終了条件が良くない。(string= "" line)では空行でループが終わってしまう。
 (defun make-n-gram-from-file (infile &optional (n 2))
   "infile の各行は句点（。）で終了していること。"
   (with-open-file (in infile)
