@@ -66,7 +66,7 @@
          (let* ((words (remove-if-not #'(lambda (x) (string= s (top x))) *n-gram*))
                 (word (nth (random (length words)) words)))
            (cond
-             ((end? word) (cons *end* (cons word ret)))
+             ((end? word) (cons word ret))
              ;;((> (length ret) 10) ret)
              (t (M (top (reverse  word)) (cons word ret))))))))
-  (cat (reverse (mapcar #'top (M s nil)))))
+  (cat (reverse (mapcar #'top (cons *end* (M s nil))))))
