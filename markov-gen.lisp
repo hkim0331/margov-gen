@@ -20,7 +20,7 @@
         (cat2 (car ss) (cat (cdr ss))))))
 
 (defun n-gram (s &optional (n 2))
-  "文字列 s を n-グラム化したリストを返す。"
+  "文字列 s を n-グラム化したリストを返す。文字列は句点（。）で終わること。"
   (labels ((dup (n str ret)
              (let ((bt (but-top str)))
                (if (= n 1) ret
@@ -41,14 +41,33 @@
     (print sexp out)))
 
 (defun make-n-gram (&optional (n 2))
-  "標準入力から文字列読んで、n-gram にし、ファイルにセーブ。デフォルトは 2-gram。"
+  "標準入力から文字列読んで、n-gram にし、ファイルにセーブ。デフォルトは 2-gram。
+  文字列は句点（。）で終わること。"
   (loop for line = (read-line t nil) until (string= "" line)
      do (append-to-file (n-gram line n))))
+
+(defun prep-text-file (infile outfile)
+  "テキストファイルinfile を make-n-gram-from-file の処理に適した形式に変換する。
+つまり、各行が句点（。）で終わるよう変形する。"
+  (with-open-file (out outfile
+                       :direction :output
+                       :if-exists :supersede)
+    (with-open-file (in infile)
+      (loop for char = (read-char in nil) while char
+         do (progn (write-char char out)
+                   (if (char= char #\。) (write-char #\Newline out)))))))
+
+(defun make-n-gram-from-file (infile &optional (n 2))
+  "infile の各行は句点（。）で終了していること。"
+  (with-open-file (in infile)
+    (loop for line = (read-line in nil) while line
+       do (unless (string= "" line)
+            (append-to-file (n-gram line n))))))
 
 (defvar *n-gram* nil)
 
 (defun load-from-file (&optional (fname *dic*))
-  "ファイルからn-gram を読み込む。"
+  "ファイルにセーブした n-gram を読み込む。"
   (setf *n-gram* nil)
   (with-open-file (in fname)
     (loop for line = (read in nil) while line
@@ -70,3 +89,11 @@
              ((end? word) (cons *end* (cons word ret)))
              (t (M (top (reverse  word)) (cons word ret)))))))
     (cat (reverse (mapcar #'top (M s nil))))))
+
+;; sample usage
+(prep-text-file "sample.txt" "infile.txt")
+(make-n-gram-from-file "infile.txt")
+(load-from-file)
+(markov-gen "親")
+(markov-gen "あ")
+(markov-gen "小")
