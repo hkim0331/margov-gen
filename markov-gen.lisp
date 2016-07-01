@@ -46,8 +46,22 @@
   (loop for line = (read-line t nil) until (string= "" line)
      do (append-to-file (n-gram line n))))
 
-;;; テキストファイルから n-gram を生成する関数が欲しい。
-;;; その関数は句点までを一行として処理すること。
+(defun prep-text-file (infile outfile)
+  "テキストファイルinfile を make-n-gram-from-file の処理に適した形式に変換する。
+つまり、各行が句点（。）で終わるよう変形する。"
+  (with-open-file (out outfile
+                       :direction :output
+                       :if-exists :supersede)
+    (with-open-file (in infile)
+      (loop for char = (read-char in nil) while char
+         do (progn (write-char char out)
+                   (if (char= char #\。) (write-char #\Newline out)))))))
+
+(defun make-n-gram-from-file (infile &optional (n 2))
+  "infile の各行は句点（。）で終了していること。"
+  (with-open-file (in infile)
+    (loop for line = (read-line in nil) until (string= "" line)
+         do (append-to-file (n-gram line n)))))
 
 (defvar *n-gram* nil)
 
@@ -74,3 +88,11 @@
              ((end? word) (cons *end* (cons word ret)))
              (t (M (top (reverse  word)) (cons word ret)))))))
     (cat (reverse (mapcar #'top (M s nil))))))
+
+;; sample usage
+(prep-text-file "sample.txt" "infile.txt")
+(make-n-gram-from-file "infile.txt")
+(load-from-file)
+(markov-gen "親")
+(markov-gen "こ")
+(markov-gen "な")
