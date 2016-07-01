@@ -59,12 +59,15 @@
 (defun end? (word)
   (string= *end* (top (reverse word))))
 
+
+;;FIXME: words がヌルの時。
 (defun markov-gen (s)
   "スタート文字 s から出現頻度にもとづき文を生成。"
   (labels
       ((M (s ret)
          (let* ((words (remove-if-not #'(lambda (x) (string= s (top x))) *n-gram*))
-                (word (nth (random (length words)) words)))
+                (word (if (null words) (nth (random (length *n-gram*)) *n-gram*)
+                          (nth (random (length words)) words))))
            (cond
              ((end? word) (cons word ret))
              ;;((> (length ret) 10) ret)
