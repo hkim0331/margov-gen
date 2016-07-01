@@ -20,7 +20,7 @@
         (cat2 (car ss) (cat (cdr ss))))))
 
 (defun n-gram (s &optional (n 2))
-  "文字列 s を n-グラム化したリストを返す。"
+  "文字列 s を n-グラム化したリストを返す。文字列は句点（。）で終わること。"
   (labels ((dup (n str ret)
              (let ((bt (but-top str)))
                (if (= n 1) ret
@@ -41,14 +41,18 @@
     (print sexp out)))
 
 (defun make-n-gram (&optional (n 2))
-  "標準入力から文字列読んで、n-gram にし、ファイルにセーブ。デフォルトは 2-gram。"
+  "標準入力から文字列読んで、n-gram にし、ファイルにセーブ。デフォルトは 2-gram。
+  文字列は句点（。）で終わること。"
   (loop for line = (read-line t nil) until (string= "" line)
      do (append-to-file (n-gram line n))))
+
+;;; テキストファイルから n-gram を生成する関数が欲しい。
+;;; その関数は句点までを一行として処理すること。
 
 (defvar *n-gram* nil)
 
 (defun load-from-file (&optional (fname *dic*))
-  "ファイルからn-gram を読み込む。"
+  "ファイルにセーブした n-gram を読み込む。"
   (setf *n-gram* nil)
   (with-open-file (in fname)
     (loop for line = (read in nil) while line
