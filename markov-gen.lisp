@@ -54,18 +54,19 @@
     (loop for line = (read in nil) while line
          do (setf *n-gram* (nconc *n-gram* line)))))
 
-(defun end? (word)
-  (string= "。" (top (reverse word))))
+(defvar *end* "。")
 
-(defun M (s ret)
-  (let* ((words (remove-if-not #'(lambda (x) (string= s (top x))) *n-gram*))
-         (word (nth (random (length words)) words)))
-    (cond
-      ((end? word) (cons word ret))
-;;      ((> (length ret) 10) ret)
-      (t (M (top (reverse  word)) (cons word ret))))))
+(defun end? (word)
+  (string= *end* (top (reverse word))))
 
 (defun markov-gen (s)
-  "スタート文字 s から出現頻度にもとづき文を生成"
-  (cat (reverse (mapcar #'top (M s nil)))))
-
+  "スタート文字 s から出現頻度にもとづき文を生成。"
+  (labels
+      ((M (s ret)
+         (let* ((words (remove-if-not #'(lambda (x) (string= s (top x))) *n-gram*))
+                (word (nth (random (length words)) words)))
+           (cond
+             ((end? word) (cons word ret))
+             ;;((> (length ret) 10) ret)
+             (t (M (top (reverse  word)) (cons word ret))))))))
+  (cat (reverse (mapcar #'top (cons *end* (M s nil))))))
