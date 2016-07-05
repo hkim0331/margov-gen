@@ -33,22 +33,27 @@
 
 (defvar *dic* "dic.lisp")
 
-;;FIXME: fname が前もって存在しないとエラー
+;;FIXME: ダサすぎ。もっといい解があるはず。
 (defun append-to-file (sexp &optional (fname *dic*))
-  (with-open-file (out fname
-                       :direction :output
-                       :if-exists :append)
-    (print sexp out)))
+  (if (probe-file fname)
+      (with-open-file (out fname
+                           :direction :output
+                           :if-exists :append)
+        (print sexp out))
+      (with-open-file (out fname
+                           :direction :output)
+        (print sexp out))))
 
 (defun make-n-gram (&optional (n 2))
-  "標準入力から文字列読んで、n-gram にし、ファイルにセーブ。デフォルトは 2-gram。
+  "標準入力から文字列読んで、n-gram にし、ファイルにセーブ。
+デフォルトは 2-gram。
   文字列は句点（。）で終わること。"
   (loop for line = (read-line t nil) until (string= "" line)
      do (append-to-file (n-gram line n))))
 
 (defun prep-text-file (infile outfile)
-  "テキストファイルinfile を make-n-gram-from-file の処理に適した形式に変換する。
-つまり、各行が句点（。）で終わるよう変形する。"
+  "テキストファイル infile を make-n-gram-from-file の処理に適した形式に
+変換し、つまり、各行が句点（。）で終わるよう変形し、outfile としてセーブ。"
   (with-open-file (out outfile
                        :direction :output
                        :if-exists :supersede)
@@ -57,7 +62,7 @@
          do (progn (write-char char out)
                    (if (char= char #\。) (write-char #\Newline out)))))))
 
-(defun make-n-gram-from-file (infile &optional (n 2))
+(defun make-n-gram (infile &optional (n 2))
   "infile の各行は句点（。）で終了していること。"
   (with-open-file (in infile)
     (loop for line = (read-line in nil) while line
@@ -66,7 +71,7 @@
 
 (defvar *n-gram* nil)
 
-(defun load-from-file (&optional (fname *dic*))
+(defun load-dic (&optional (fname *dic*))
   "ファイルにセーブした n-gram を読み込む。"
   (setf *n-gram* nil)
   (with-open-file (in fname)
@@ -78,7 +83,7 @@
 (defun end? (word)
   (string= *end* (top (reverse word))))
 
-(defun markov-gen (s)
+(defun generate (s)
   "スタート文字 s から出現頻度にもとづき文を生成。"
   (labels
       ((M (s ret)
@@ -90,10 +95,12 @@
              (t (M (top (reverse  word)) (cons word ret)))))))
     (cat (reverse (mapcar #'top (M s nil))))))
 
-;; sample usage
-(prep-text-file "sample.txt" "infile.txt")
-(make-n-gram-from-file "infile.txt")
-(load-from-file)
-(markov-gen "親")
-(markov-gen "あ")
-(markov-gen "小")
+;;;
+;;; example
+;;;
+(prep-text-file "sample.txt" "end-by-period.txt")
+(make-n-gram "end-by-period.txt")
+(load-dic)
+(generate "親")
+(generate "あ")
+(generate "小")
