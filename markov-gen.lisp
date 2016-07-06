@@ -46,8 +46,7 @@
 
 (defun make-n-gram (&optional (n 2))
   "標準入力から文字列読んで、n-gram にし、ファイルにセーブ。
-デフォルトは 2-gram。
-  文字列は句点（。）で終わること。"
+デフォルトは 2-gram。文字列は句点（。）で終わること。"
   (loop for line = (read-line t nil) until (string= "" line)
      do (append-to-file (n-gram line n))))
 
@@ -84,7 +83,8 @@
   (string= *end* (top (reverse word))))
 
 (defun generate (s)
-  "スタート文字 s から出現頻度にもとづき文を生成。"
+  "スタート文字 s から出現頻度にもとづき文を生成。
+見つからない時は n-gram 辞書からランダムにチョイス。"
   (labels
       ((M (s ret)
          (let* ((words (remove-if-not #'(lambda (x) (string= s (top x))) *n-gram*))
@@ -95,12 +95,17 @@
              (t (M (top (reverse  word)) (cons word ret)))))))
     (cat (reverse (mapcar #'top (M s nil))))))
 
-;;;
-;;; example
-;;;
-(prep-text-file "sample.txt" "end-by-period.txt")
-(make-n-gram "end-by-period.txt")
-(load-dic)
+(defun prep (infile)
+  (let ((temp "end-by-period.txt"))
+    (prep-text-file infile temp)
+    (make-n-gram temp)
+    (load-dic)))
+
+;; example
+;; (prep-text-file "sample.txt" "end-by-period.txt")
+;; (make-n-gram "end-by-period.txt")
+;; (load-dic)
+(prep "sample.txt")
 (generate "親")
 (generate "あ")
 (generate "小")
