@@ -1,8 +1,8 @@
 (in-package :cl-user)
 
-(defpackage :markov-gen (:use :cl))
+(defpackage :markov-talk (:use :cl))
 
-(in-package :markov-gen)
+(in-package :markov-talk)
 
 (defun top (s)
   "文字列 s の最初の1文字からなる文字列を返す。"
@@ -96,14 +96,25 @@
     (cat (reverse (mapcar #'top (M s nil))))))
 
 (defun prep (infile)
-  (let ((temp "end-by-period.txt"))
+  (let ((temp #p"temp.txt"))
     (prep-text-file infile temp)
     (make-n-gram temp)
     (load-dic)))
 
+;;
 ;; example
-(prep "sample.txt")
-
+(prep #p"sample.txt")
 (generate "親")
-(generate "あ")
+(generate "実")
 (generate "小")
+
+;; どう改良するか
+;;
+;; * 例文を夏目漱石ではなく、具体的な会話から採る。
+;; * n 文字ではなく、単語で区切るようにする
+;; * 入力あった文字列を次々に辞書に登録する。
+;; * コンピュータどうしに発話、応答させてみる。
+
+
+
+
