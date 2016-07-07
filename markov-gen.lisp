@@ -102,10 +102,8 @@
     (load-dic)))
 
 ;; example
-;; (prep-text-file "sample.txt" "end-by-period.txt")
-;; (make-n-gram "end-by-period.txt")
-;; (load-dic)
 (prep "sample.txt")
+
 (generate "親")
 (generate "あ")
 (generate "小")
