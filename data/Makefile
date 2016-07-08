@@ -1,18 +1,18 @@
-all: wakati
+.SUFFIXES: .html .txt .wakati
 
-extract: 春.html 最後の一枚の葉.html 賢者の贈り物.html
-	for i in $^; do \
-		nkf -w $$i | ruby extract.rb | \
+.html.txt:
+	nkf -w $< | ruby extract.rb | \
 		sed 's/<ruby>.*<\/ruby>//g' | \
-		ruby join.rb > `basename $$i .html`.txt; \
-	done
+		ruby join.rb > $@
 
-wakati: extract
-	for i in *.txt; do \
-		mecab $$i -O wakati > `basename $$i .txt`.wakati ; \
-	done
+.txt.wakati:
+	mecab $< -O wakati > $@
+
+all: 春.wakati 最後の一枚の葉.wakati 賢者の贈り物.wakati
 
 clean:
-	${RM} *.txt
+	${RM} *~ *.txt *.wakati
+
+
 
 
