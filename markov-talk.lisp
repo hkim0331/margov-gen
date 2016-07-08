@@ -94,8 +94,6 @@
              (t (G (top (reverse  word)) (cons word ret)))))))
     (reverse (G s nil))))
 
-(generate "親")
-
 (defun display (xs)
   "n-gram リストの各要素先頭文字を連結。"
   (cat (mapcar #'top  xs)))
