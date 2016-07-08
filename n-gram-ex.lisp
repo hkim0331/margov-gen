@@ -2,7 +2,15 @@
 
 分かち書きされた日本語文書からこれから拡張 n-gram を作り、
 会話する。
-hkimura, 2016-07-07.
+隣の markov-talk とファイル名、グローバルシンボルがかぶらないように。
+mecab により、分かち書きされたテキストファイルを入力とする。
+n-gram 化したリストの各要素は markov-talk では、
+
+("親譲" "譲り" "りの" "の無" "無鉄" "鉄砲" "砲で" "で小" "小供" "供の" "の時" "時か" "から" "ら損" "損ば" "ばか" "かり" "りし" "して" "てい" "いる" "る。")
+
+となるが、こちらの n-gram-ex では、*** 作文途中 ***
+
+hkimura, 2016-07-07, 2016-07-08,
 
 |#
 
@@ -17,12 +25,13 @@ hkimura, 2016-07-07.
      while j))
 
 (defun split (string &optional (char #\Space))
-  "分かち書きされた文字列 string をスペースで区切ってリストにする。"
+  "分かち書きされた文字列 string を charで区切ってリストにする。
+char を省略した場合 #\Space で区切る。"
   (remove-if #'(lambda (s) (string= "" s)) (split-by-char string char)))
 
 (defvar *s* "髪 を 買っ て ください ます か。" )
-
 (split *s*)
+;;=> ("髪" "を" "買っ" "て" "ください" "ます" "か。")
 
 (defun n-gram-ex (xs &optional (n 2))
   (labels ((dup (n xs ret)
@@ -35,12 +44,14 @@ hkimura, 2016-07-07.
                        (n-gram-aux (mapcar #'cdr m))))))
     (mapcar #'reverse (n-gram-aux (dup n xs (list xs))))))
 
-(n-gram-ex (split *s*) 3)
+(defvar *s2* "親譲り の 無鉄砲 で 小 供 の 時 から 損 ばかり し て いる 。" )
+(n-gram-ex (split *s2*) 2)
+;; => (("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
 
-(defvar *dic* "dic-ex.lisp")
+(defvar *dic-ex* "dic-ex.lisp")
 
 ;;FIXME: ダサすぎ。もっといい解があるはず。
-(defun append-to-file (sexp &optional (fname *dic*))
+(defun append-to-file (sexp &optional (fname *dic-ex*))
   (if (probe-file fname)
       (with-open-file (out fname :direction :output :if-exists :append)
         (print sexp out))
@@ -48,61 +59,61 @@ hkimura, 2016-07-07.
         (print sexp out))))
 
 (defun make-n-gram-ex (infile &optional (n 2))
-  "infile は分かち書きされた日本語文書。各行は句点（。）で終了していること。"
+  "infile は分かち書きされた日本語テキストファイル。
+各行は句点（。）で終了していること。"
   (with-open-file (in infile)
     (loop for line = (read-line in nil) while line
        do (unless (string= "" line)
             (append-to-file (n-gram-ex (split line) n))))))
 
-(defvar *s2* "ミスタージェームズディリンガムヤング 。 " )
-(n-gram-ex (split *s2*) 2)
-
-(make-n-gram-ex "sample.wakati")
-
 (defvar *n-gram-ex* nil)
 
-(defun load-dic (&optional (fname *dic-ex*))
+(defun load-dic-ex (&optional (fname *dic-ex*))
   "ファイルにセーブした n-gram を *n-gram-ex* に読み込む。"
   (setf *n-gram-ex* nil)
   (with-open-file (in fname)
     (loop for line = (read in nil) while line
          do (setf *n-gram-ex* (nconc *n-gram-ex* line)))))
 
-(load-dic)
-
-(length *n-gram-ex*)
-
-(defvar *end* "。")
-
 (defun top (s)
   (subseq s 0 1))
 
+(defvar *end* "。")
 (defun end? (word)
-  (string= *end* (top (reverse word))))
+  (string= *end* word))
 
+(make-n-gram-ex #p"data/坊っちゃん.wakati")
+
+(load-dic-ex)
+(length *n-gram-ex*)
 (end? *end*)
 
+;; start-from ?
 (defun generate-ex (w)
   "スタートワード w から出現頻度にもとづき文を生成。
 候補が見つからない時は *n-gram-ex* 辞書からランダムにチョイス。"
   (labels
-      ((M (s ret)
+      ((G (w ret)
          (let*
              ((words
-               (remove-if-not #'(lambda (x) (string= s (car x))) *n-gram-ex*))
+               (remove-if-not #'(lambda (x) (string= w (car x))) *n-gram-ex*))
               (word
                (if (null words) (nth (random (length *n-gram-ex*)) *n-gram-ex*)
                    (nth (random (length words)) words))))
            (cond
              ((end? word) (cons *end* (cons word ret)))
-             (t (M (top (reverse  word)) (cons word ret)))))))
-    (cat (reverse (mapcar #'top (M s nil))))))
+             (t (G (top (reverse  word)) (cons word ret)))))))
+    (G w nil)))
 
-(defun prep (infile)
-  (let ((temp #p"temp.txt"))
-    (prep-text-file infile temp)
-    (make-n-gram temp)
-    (load-dic)))
+;; FIXME error:
+;; the value of ("学校" "で") is not of the expected type
+(generate-ex "学校")
+
+;; (defun prep (infile)
+;;   (let ((temp #p"temp.txt"))
+;;     (prep-text-file infile temp)
+;;     (make-n-gram temp)
+;;     (load-dic)))
 
 ;; ;;
 ;; ;; example
