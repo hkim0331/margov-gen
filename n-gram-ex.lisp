@@ -123,15 +123,9 @@ char を省略した場合 #\Space で区切る。"
 
 (display (generate-ex "親譲り"))
 
-;; (defun prep (infile)
-;;   (let ((temp #p"temp.txt"))
-;;     (prep-text-file infile temp)
-;;     (make-n-gram temp)
-;;     (load-dic)))
 
-;; ;;
-;; ;; example
-;; (prep #p"sample.txt")
-;; (generate "親")
-;; (generate "実")
-;; (generate "小")
+;; "親譲りの井戸のナイフを半分崩してきた"
+;;
+;; "親譲りの甲を失って済んだと肴屋という十三人が湧わき出なくなった事はどんな仕掛か、そこいたら、深く埋めて、栗をぎゅうぎゅう井戸を捕まえて奇麗な栗だが山城屋の地面は菜園のを食っても取り返してぐいぐい押おした。"
+;;
+;; "親譲りの稲に、とうとう勘太郎は無論弱虫の夕方折戸のナイフが堅かったの中にある"
