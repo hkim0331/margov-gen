@@ -78,9 +78,10 @@ char を省略した場合 #\Space で区切る。"
 (defun top (s)
   (subseq s 0 1))
 
+;; bugfixed.
 (defvar *end* "。")
 (defun end? (word)
-  (string= *end* word))
+  (string= *end* (car (reverse word))))
 
 (make-n-gram-ex #p"data/坊っちゃん.wakati")
 
@@ -89,6 +90,7 @@ char を省略した場合 #\Space で区切る。"
 (end? *end*)
 
 ;; start-from ?
+;; not word is a pair such as ("親譲り" "の").
 (defun generate-ex (w)
   "スタートワード w から出現頻度にもとづき文を生成。
 候補が見つからない時は *n-gram-ex* 辞書からランダムにチョイス。"
@@ -101,13 +103,25 @@ char を省略した場合 #\Space で区切る。"
                (if (null words) (nth (random (length *n-gram-ex*)) *n-gram-ex*)
                    (nth (random (length words)) words))))
            (cond
-             ((end? word) (cons *end* (cons word ret)))
-             (t (G (top (reverse  word)) (cons word ret)))))))
-    (G w nil)))
+             ;; FIXME: lost last "。"
+             ((end? word) (cons (list *end*) (cons word ret)))
+             ;; not cdr. for use of 3-gram, 4-gram, etc.
+             (t (G (car (reverse word)) (cons word ret)))))))
+    (reverse (G w nil))))
 
-;; FIXME error:
-;; the value of ("学校" "で") is not of the expected type
-(generate-ex "学校")
+(generate-ex "親譲り")
+
+(defun cat (ss)
+  "文字列のリストを引数に取り、それらを連結した文字列を返す。"
+  (labels ((cat2 (a b)
+             (concatenate 'string a b)))
+    (if (null ss) ""
+        (cat2 (car ss) (cat (cdr ss))))))
+
+(defun display (ret)
+  (cat (mapcar #'car ret)))
+
+(display (generate-ex "親譲り"))
 
 ;; (defun prep (infile)
 ;;   (let ((temp #p"temp.txt"))
