@@ -1,7 +1,5 @@
 (in-package :cl-user)
-
 (defpackage :markov-talk (:use :cl))
-
 (in-package :markov-talk)
 
 (defun top (s)
@@ -71,7 +69,7 @@
 (defvar *n-gram* nil)
 
 (defun load-dic (&optional (fname *dic*))
-  "ファイルにセーブした n-gram を読み込む。"
+  "ファイルにセーブした n-gram を *n-gram* に読み込む。"
   (setf *n-gram* nil)
   (with-open-file (in fname)
     (loop for line = (read in nil) while line
@@ -84,16 +82,23 @@
 
 (defun generate (s)
   "スタート文字 s から出現頻度にもとづき文を生成。
-見つからない時は n-gram 辞書からランダムにチョイス。"
+見つからない時は n-gram 辞書からランダムにチョイス。
+戻り値は n-gram のリスト。"
   (labels
-      ((M (s ret)
+      ((G (s ret)
          (let* ((words (remove-if-not #'(lambda (x) (string= s (top x))) *n-gram*))
                 (word (if (null words) (nth (random (length *n-gram*)) *n-gram*)
                           (nth (random (length words)) words))))
            (cond
              ((end? word) (cons *end* (cons word ret)))
-             (t (M (top (reverse  word)) (cons word ret)))))))
-    (cat (reverse (mapcar #'top (M s nil))))))
+             (t (G (top (reverse  word)) (cons word ret)))))))
+    (reverse (G s nil))))
+
+(generate "親")
+
+(defun display (xs)
+  "n-gram リストの各要素先頭文字を連結。"
+  (cat (mapcar #'top  xs)))
 
 (defun prep (infile)
   (let ((temp #p"temp.txt"))
@@ -104,9 +109,9 @@
 ;;
 ;; example
 (prep #p"sample.txt")
-(generate "親")
-(generate "実")
-(generate "小")
+(display (generate "親"))
+(display (generate "実"))
+(display (generate "小"))
 
 ;; どう改良するか
 ;;
@@ -114,7 +119,3 @@
 ;; * n 文字ではなく、単語で区切るようにする
 ;; * 入力あった文字列を次々に辞書に登録する。
 ;; * コンピュータどうしに発話、応答させてみる。
-
-
-
-
