@@ -18,6 +18,42 @@ hkimura, 2016-07-07, 2016-07-08,
 (defpackage :n-gram-ex (:use :cl))
 (in-package :n-gram-ex)
 
+(defun range (i &optional j k)
+  (labels
+      ((RNG (from to step)
+         (labels ((R (from to step ret)
+                    (if (>= from to) ret
+                        (R (+ from step) to step (cons from ret)))))
+           (reverse  (R from to step nil)))))
+    (cond
+      ((null j) (RNG 0 i 1))
+      ((null k) (RNG i j 1))
+      (t (RNG i j k)))))
+
+(defun drop (n xs)
+  (cond
+    ((zerop n) xs)
+    ((null xs) nil)
+    (t (drop (- n 1) (cdr xs)))))
+
+(defun take (n xs)
+  (labels
+      ((TK (n xs ret)
+         (cond
+           ;; order is important.
+           ((zerop n) (reverse ret))
+           ((null xs) nil)
+           (t (TK (1- n) (cdr xs) (cons (car xs) ret))))))
+    (TK n xs nil)))
+
+(defun partition (xs n &optional (d n))
+  (labels
+      ((PA (xs n d ret)
+         (let ((head (take n xs)))
+           (if (or (null xs) (null head)) (reverse ret)
+               (PA (drop d xs) n d (cons head ret))))))
+    (PA xs n d nil)))
+
 ;; cl:ppcre で書き直せないか?
 (defun split-by-char (string char)
   (loop for i = 0 then (1+ j)
@@ -34,23 +70,20 @@ char を省略した場合 #\Space で区切る。"
 (split *s*)
 ;;=> ("髪" "を" "買っ" "て" "ください" "ます" "か。")
 
-;;FIXME: Mathematica の Partition みたいな関数を定義できないか?
-;;partition (xs &key n (offset n)) な感じ。そうすると、
-;;
-;;(defun n-gram-ex (xs &optional (n 2))
-;;   (partition xs n 1))
-
 (defun n-gram-ex (xs &optional (n 2))
-  "入力は単語のリストからなるリスト。"
-  (labels ((dup (n xs ret)
-             (let ((bt (rest xs)))
-               (if (= n 1) ret
-                   (dup (- n 1) bt (cons bt ret)))))
-           (n-gram-aux (m)
-             (if (null (car m)) nil
-                 (cons (mapcar #'car m)
-                       (n-gram-aux (mapcar #'cdr m))))))
-    (mapcar #'reverse (n-gram-aux (dup n xs (list xs))))))
+  (partition xs n 1))
+
+;; (defun n-gram-ex (xs &optional (n 2))
+;;   "入力は単語のリストからなるリスト。"
+;;   (labels ((dup (n xs ret)
+;;              (let ((bt (rest xs)))
+;;                (if (= n 1) ret
+;;                    (dup (- n 1) bt (cons bt ret)))))
+;;            (n-gram-aux (m)
+;;              (if (null (car m)) nil
+;;                  (cons (mapcar #'car m)
+;;                        (n-gram-aux (mapcar #'cdr m))))))
+;;     (mapcar #'reverse (n-gram-aux (dup n xs (list xs))))))
 
 (defvar *s2* "親譲り の 無鉄砲 で 小 供 の 時 から 損 ばかり し て いる 。" )
 
@@ -121,19 +154,6 @@ char を省略した場合 #\Space で区切る。"
 (make-n-gram-ex #p"data/賢者の贈り物.mecab")
 (load-dic-ex)
 
-;;(display (generate-ex "親譲り"))
-;; "親譲りの井戸のナイフを半分崩してきた"
-;;
-;; "親譲りの甲を失って済んだと肴屋という十三人が湧わき出なくなった事はどんな仕掛か、そこいたら、深く埋めて、栗をぎゅうぎゅう井戸を捕まえて奇麗な栗だが山城屋の地面は菜園のを食っても取り返してぐいぐい押おした。"
-;;
-;; "親譲りの稲に、とうとう勘太郎は無論弱虫の夕方折戸のナイフが堅かったの中にある"
-
-;;(display (generate-ex "実"))
-;; "実の甲を失って済んだと肴屋という十三人が湧わき出なくなった事はどんな仕掛か、そこいたら、深く埋めて、栗をぎゅうぎゅう井戸を捕まえて奇麗な栗だが山城屋の地面は菜園のを食っても取り返してぐいぐい押おした。"
-;;
-;; "実の節を抜ぬかしたので、右左へ挿し込んで食う。"
-;;
-;; "実の人参畠をつれてみろと答えた。"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; N-GRAM-EX> (display (GENERATE-EX "髪"))
 ;; "髪はね、はじめの髪はね、変わらずに好きで。"

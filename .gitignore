@@ -3,3 +3,4 @@ temp.txt
 !sample.txt
 data/*.txt
 data/*.wakati
+data/*.mecab
