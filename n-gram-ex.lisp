@@ -22,9 +22,9 @@ hkimura, 2016-07-07, 2016-07-08,
   (labels
       ((RNG (from to step)
          (labels ((R (from to step ret)
-                    (if (>= from to) ret
+                    (if (>= from to) (nreverse ret)
                         (R (+ from step) to step (cons from ret)))))
-           (reverse  (R from to step nil)))))
+           (R from to step nil))))
     (cond
       ((null j) (RNG 0 i 1))
       ((null k) (RNG i j 1))
@@ -41,7 +41,7 @@ hkimura, 2016-07-07, 2016-07-08,
       ((TK (n xs ret)
          (cond
            ;; order is important.
-           ((zerop n) (reverse ret))
+           ((zerop n) (nreverse ret))
            ((null xs) nil)
            (t (TK (1- n) (cdr xs) (cons (car xs) ret))))))
     (TK n xs nil)))
@@ -50,7 +50,7 @@ hkimura, 2016-07-07, 2016-07-08,
   (labels
       ((PA (xs n d ret)
          (let ((head (take n xs)))
-           (if (or (null xs) (null head)) (reverse ret)
+           (if (or (null xs) (null head)) (nreverse ret)
                (PA (drop d xs) n d (cons head ret))))))
     (PA xs n d nil)))
 
@@ -83,7 +83,7 @@ char を省略した場合 #\Space で区切る。"
 ;;              (if (null (car m)) nil
 ;;                  (cons (mapcar #'car m)
 ;;                        (n-gram-aux (mapcar #'cdr m))))))
-;;     (mapcar #'reverse (n-gram-aux (dup n xs (list xs))))))
+;;     (mapcar #'nreverse (n-gram-aux (dup n xs (list xs))))))
 
 (defvar *s2* "親譲り の 無鉄砲 で 小 供 の 時 から 損 ばかり し て いる 。" )
 
@@ -136,10 +136,10 @@ char を省略した場合 #\Space で区切る。"
                (if (null words) (nth (random (length *n-gram-ex*)) *n-gram-ex*)
                    (nth (random (length words)) words))))
            (cond
-             ((end? word) (cons (list *end*) (cons word ret)))
-             ;; not cdr. for use of 3-gram, 4-gram, etc.
+             ((end? word) (nreverse (cons (list *end*) (cons word ret))))
+              ;; not cdr. for use of 3-gram, 4-gram, etc.
              (t (G (car (reverse word)) (cons word ret)))))))
-    (reverse (G w nil))))
+    (G w nil)))
 
 (defun cat (ss)
   "文字列のリストを引数に取り、それらを連結した文字列を返す。"
@@ -154,31 +154,8 @@ char を省略した場合 #\Space で区切る。"
 (make-n-gram-ex #p"data/賢者の贈り物.mecab")
 (load-dic-ex)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; N-GRAM-EX> (display (GENERATE-EX "髪"))
-;; "髪はね、はじめの髪はね、変わらずに好きで。"
-;; N-GRAM-EX> (display (GENERATE-EX "髪"))
-;; "髪ができるっていうの。"
-;; N-GRAM-EX> (display (GENERATE-EX "髪"))
-;; "髪ができるのうちしばらく、わたしのことは、でしょうけれど。"
-;; N-GRAM-EX> (display (GENERATE-EX "時計"))
-;; "時計、ねえ素敵なプレゼントはまた伸びるわ——ああ、あなたを探してよ。"
-;; N-GRAM-EX> (display (GENERATE-EX "時計"))
-;; "時計、わたしのかわいいと思うよ。"
-;; N-GRAM-EX> (display (GENERATE-EX "時計"))
-;; "時計になるか見たいの間、あなたにプレゼント一つあげずにしないんだ！。"
-;; N-GRAM-EX> (display (GENERATE-EX "時計"))
-;; "時計に好きで。"
-;; N-GRAM-EX> (display (GENERATE-EX "時計"))
-;; "時計を火に、一本一日に１ドル８７セントで。"
-;; N-GRAM-EX> (display (GENERATE-EX "時計"))
-;; "時計を作るためになったりするもんか。"
-;; N-GRAM-EX> (display (GENERATE-EX "櫛"))
-;; "櫛を売っちゃったのことは上等すぎるよ、ジム！。"
-;; N-GRAM-EX> (display (GENERATE-EX "櫛"))
-;; "櫛を作るためになるわ——綺麗で。"
-;; N-GRAM-EX> (display (GENERATE-EX "櫛"))
-;; "櫛を過ごすなんて絶対できないで僕のことをどれだけ愛して、よね？。"
-;; N-GRAM-EX> (display (GENERATE-EX "櫛"))
-;; "櫛を切ってもいい、ジムができるっていうのは、チョップをつけたら、売っちゃったのうちしばらく、貸してもいいのよ。"
+(display (generate-ex "わたし"))
+(display (GENERATE-EX "髪"))
+(display (GENERATE-EX "櫛"))
+(display (GENERATE-EX "時計"))
 
