@@ -27,7 +27,7 @@
              (if (string= "" (car m)) nil
                  (cons (cat (mapcar #'top m))
                        (n-gram-aux (mapcar #'but-top m))))))
-    (mapcar #'reverse (n-gram-aux (dup n s (list s))))))
+    (mapcar #'nreverse (n-gram-aux (dup n s (list s))))))
 
 (defvar *dic* "dic.lisp")
 
@@ -92,7 +92,7 @@
            (cond
              ((end? word) (cons *end* (cons word ret)))
              (t (G (top (reverse  word)) (cons word ret)))))))
-    (reverse (G s nil))))
+    (nreverse (G s nil))))
 
 (defun display (xs)
   "n-gram リストの各要素先頭文字を連結。"

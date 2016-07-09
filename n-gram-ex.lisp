@@ -22,9 +22,9 @@ hkimura, 2016-07-07, 2016-07-08,
   (labels
       ((RNG (from to step)
          (labels ((R (from to step ret)
-                    (if (>= from to) ret
+                    (if (>= from to) (reverse ret)
                         (R (+ from step) to step (cons from ret)))))
-           (reverse  (R from to step nil)))))
+           (R from to step nil))))
     (cond
       ((null j) (RNG 0 i 1))
       ((null k) (RNG i j 1))
@@ -136,10 +136,10 @@ char を省略した場合 #\Space で区切る。"
                (if (null words) (nth (random (length *n-gram-ex*)) *n-gram-ex*)
                    (nth (random (length words)) words))))
            (cond
-             ((end? word) (cons (list *end*) (cons word ret)))
-             ;; not cdr. for use of 3-gram, 4-gram, etc.
+             ((end? word) (reverse (cons (list *end*) (cons word ret))))
+              ;; not cdr. for use of 3-gram, 4-gram, etc.
              (t (G (car (reverse word)) (cons word ret)))))))
-    (reverse (G w nil))))
+    (G w nil)))
 
 (defun cat (ss)
   "文字列のリストを引数に取り、それらを連結した文字列を返す。"
@@ -153,6 +153,8 @@ char を省略した場合 #\Space で区切る。"
 
 (make-n-gram-ex #p"data/賢者の贈り物.mecab")
 (load-dic-ex)
+
+(display (generate-ex "わたし"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; N-GRAM-EX> (display (GENERATE-EX "髪"))
