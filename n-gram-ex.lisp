@@ -1,16 +1,16 @@
-#|
+ #|
 
-分かち書きされた日本語文書からこれから拡張 n-gram を作り、
-会話する。
-隣の markov-talk とファイル名、グローバルシンボルがかぶらないように。
+分かち書きされた日本語文書から拡張 n-gram を作り、会話する。
 mecab により、分かち書きされたテキストファイルを入力とする。
-n-gram 化したリストの各要素は markov-talk では、
+n-gram 化したリストの各要素は markov-talk では次になる。
 
 ("親譲" "譲り" "りの" "の無" "無鉄" "鉄砲" "砲で" "で小" "小供" "供の" "の時" "時か" "から" "ら損" "損ば" "ばか" "かり" "りし" "して" "てい" "いる" "る。")
 
-となるが、こちらの n-gram-ex では、*** 作文途中 ***
+n-gram-ex では次。
 
-hkimura, 2016-07-07, 2016-07-08,
+(("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
+
+hkimura, 2016-07-07, 2016-07-08, 2016-07-09,
 
 |#
 
@@ -18,6 +18,46 @@ hkimura, 2016-07-07, 2016-07-08,
 (defpackage :n-gram-ex (:use :cl))
 (in-package :n-gram-ex)
 
+(defun range (i &optional j k)
+  (labels
+      ((RNG (from to step)
+         (labels ((R (from to step ret)
+                    (if (>= from to) (nreverse ret)
+                        (R (+ from step) to step (cons from ret)))))
+           (R from to step nil))))
+    (cond
+      ((null j) (RNG 0 i 1))
+      ((null k) (RNG i j 1))
+      (t (RNG i j k)))))
+
+(defun drop (n xs)
+  (cond
+    ((zerop n) xs)
+    ((null xs) nil)
+    (t (drop (- n 1) (cdr xs)))))
+
+(defun take (n xs)
+  (labels
+      ((TK (n xs ret)
+         (cond
+           ;; order is important.
+           ((zerop n) (nreverse ret))
+           ((null xs) nil)
+           (t (TK (1- n) (cdr xs) (cons (car xs) ret))))))
+    (TK n xs nil)))
+
+(defun partition (xs n &optional (d n))
+  (labels
+      ((PA (xs n d ret)
+         (let ((head (take n xs)))
+           (if (or (null xs) (null head)) (nreverse ret)
+               (PA (drop d xs) n d (cons head ret))))))
+    (PA xs n d nil)))
+
+(defun n-gram-ex (xs &optional (n 2))
+  (partition xs n 1))
+
+;; FIXME: cl:ppcre で書き直せないか?
 (defun split-by-char (string char)
   (loop for i = 0 then (1+ j)
      as j = (position char string :start i)
@@ -25,28 +65,13 @@ hkimura, 2016-07-07, 2016-07-08,
      while j))
 
 (defun split (string &optional (char #\Space))
-  "分かち書きされた文字列 string を charで区切ってリストにする。
+  "分かち書きした文字列 string を charで区切ってリストにする。
 char を省略した場合 #\Space で区切る。"
   (remove-if #'(lambda (s) (string= "" s)) (split-by-char string char)))
 
-(defvar *s* "髪 を 買っ て ください ます か。" )
-(split *s*)
-;;=> ("髪" "を" "買っ" "て" "ください" "ます" "か。")
-
-(defun n-gram-ex (xs &optional (n 2))
-  (labels ((dup (n xs ret)
-             (let ((bt (rest xs)))
-               (if (= n 1) ret
-                   (dup (- n 1) bt (cons bt ret)))))
-           (n-gram-aux (m)
-             (if (null (car m)) nil
-                 (cons (mapcar #'car m)
-                       (n-gram-aux (mapcar #'cdr m))))))
-    (mapcar #'reverse (n-gram-aux (dup n xs (list xs))))))
-
-(defvar *s2* "親譲り の 無鉄砲 で 小 供 の 時 から 損 ばかり し て いる 。" )
-(n-gram-ex (split *s2*) 2)
-;; => (("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
+;;(defvar *s2* "親譲り の 無鉄砲 で 小 供 の 時 から 損 ばかり し て いる 。" )
+;; (n-gram-ex (split *s2*) 2)
+;; ;; => (("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
 
 (defvar *dic-ex* "dic-ex.lisp")
 
@@ -78,19 +103,12 @@ char を省略した場合 #\Space で区切る。"
 (defun top (s)
   (subseq s 0 1))
 
-;; bugfixed.
 (defvar *end* "。")
+
+;; ここは nreverse ではまずいだろ。
 (defun end? (word)
   (string= *end* (car (reverse word))))
 
-(make-n-gram-ex #p"data/坊っちゃん.wakati")
-
-(load-dic-ex)
-(length *n-gram-ex*)
-(end? *end*)
-
-;; start-from ?
-;; not word is a pair such as ("親譲り" "の").
 (defun generate-ex (w)
   "スタートワード w から出現頻度にもとづき文を生成。
 候補が見つからない時は *n-gram-ex* 辞書からランダムにチョイス。"
@@ -103,29 +121,28 @@ char を省略した場合 #\Space で区切る。"
                (if (null words) (nth (random (length *n-gram-ex*)) *n-gram-ex*)
                    (nth (random (length words)) words))))
            (cond
-             ;; FIXME: lost last "。"
-             ((end? word) (cons (list *end*) (cons word ret)))
-             ;; not cdr. for use of 3-gram, 4-gram, etc.
+             ((end? word) (nreverse (cons (list *end*) (cons word ret))))
+              ;; not cdr. for use of 3-gram, 4-gram, etc.
              (t (G (car (reverse word)) (cons word ret)))))))
-    (reverse (G w nil))))
-
-(generate-ex "親譲り")
+    (G w nil)))
 
 (defun cat (ss)
   "文字列のリストを引数に取り、それらを連結した文字列を返す。"
-  (labels ((cat2 (a b)
-             (concatenate 'string a b)))
-    (if (null ss) ""
-        (cat2 (car ss) (cat (cdr ss))))))
+  (apply #'concatenate 'string ss))
 
 (defun display (ret)
   (cat (mapcar #'car ret)))
 
-(display (generate-ex "親譲り"))
+(make-n-gram-ex #p"data/賢者の贈り物.mecab")
+(load-dic-ex)
 
+(display (generate-ex "わたし"))
+(display (generate-ex "髪"))
+(display (generate-ex "櫛"))
+(display (generate-ex "時計"))
 
-;; "親譲りの井戸のナイフを半分崩してきた"
-;;
-;; "親譲りの甲を失って済んだと肴屋という十三人が湧わき出なくなった事はどんな仕掛か、そこいたら、深く埋めて、栗をぎゅうぎゅう井戸を捕まえて奇麗な栗だが山城屋の地面は菜園のを食っても取り返してぐいぐい押おした。"
-;;
-;; "親譲りの稲に、とうとう勘太郎は無論弱虫の夕方折戸のナイフが堅かったの中にある"
+;; 動作を確認できたらまとめちゃってもいい。
+
+;; 会話にする。
+;; 音声入出力。
+
