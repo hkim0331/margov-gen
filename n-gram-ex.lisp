@@ -54,6 +54,9 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09,
                (PA (drop d xs) n d (cons head ret))))))
     (PA xs n d nil)))
 
+(defun n-gram-ex (xs &optional (n 2))
+  (partition xs n 1))
+
 ;; FIXME: cl:ppcre で書き直せないか?
 (defun split-by-char (string char)
   (loop for i = 0 then (1+ j)
@@ -62,16 +65,9 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09,
      while j))
 
 (defun split (string &optional (char #\Space))
-  "分かち書きされた文字列 string を charで区切ってリストにする。
+  "分かち書きした文字列 string を charで区切ってリストにする。
 char を省略した場合 #\Space で区切る。"
   (remove-if #'(lambda (s) (string= "" s)) (split-by-char string char)))
-
-;;(defvar *s* "髪 を 買っ て ください ます か。" )
-;;(split *s*)
-;;=> ("髪" "を" "買っ" "て" "ください" "ます" "か。")
-
-(defun n-gram-ex (xs &optional (n 2))
-  (partition xs n 1))
 
 ;;(defvar *s2* "親譲り の 無鉄砲 で 小 供 の 時 から 損 ばかり し て いる 。" )
 ;; (n-gram-ex (split *s2*) 2)
@@ -109,7 +105,7 @@ char を省略した場合 #\Space で区切る。"
 
 (defvar *end* "。")
 
-;; ここは nreverse ではまずい。
+;; ここは nreverse ではまずいだろ。
 (defun end? (word)
   (string= *end* (car (reverse word))))
 
@@ -130,13 +126,9 @@ char を省略した場合 #\Space で区切る。"
              (t (G (car (reverse word)) (cons word ret)))))))
     (G w nil)))
 
-;; FIXME: マクロで書き換えられないか？
 (defun cat (ss)
   "文字列のリストを引数に取り、それらを連結した文字列を返す。"
-  (labels ((cat2 (a b)
-             (concatenate 'string a b)))
-    (if (null ss) ""
-        (cat2 (car ss) (cat (cdr ss))))))
+  (apply #'concatenate 'string ss))
 
 (defun display (ret)
   (cat (mapcar #'car ret)))
@@ -152,3 +144,5 @@ char を省略した場合 #\Space で区切る。"
 ;; 動作を確認できたらまとめちゃってもいい。
 
 ;; 会話にする。
+;; 音声入出力。
+
