@@ -2,15 +2,15 @@
 
 分かち書きされた日本語文書から拡張 n-gram を作り、会話する。
 mecab により、分かち書きされたテキストファイルを入力とする。
-n-gram 化したリストの各要素は markov-talk では、
+n-gram 化したリストの各要素は markov-talk では次になる。
 
 ("親譲" "譲り" "りの" "の無" "無鉄" "鉄砲" "砲で" "で小" "小供" "供の" "の時" "時か" "から" "ら損" "損ば" "ばか" "かり" "りし" "して" "てい" "いる" "る。")
 
-となるが、こちらの n-gram-ex では、*** 作文途中 ***
+n-gram-ex では次。
 
-隣の markov-talk とファイル名、グローバルシンボルがかぶらないように。
+(("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
 
-hkimura, 2016-07-07, 2016-07-08,
+hkimura, 2016-07-07, 2016-07-08, 2016-07-09,
 
 |#
 
@@ -54,7 +54,10 @@ hkimura, 2016-07-07, 2016-07-08,
                (PA (drop d xs) n d (cons head ret))))))
     (PA xs n d nil)))
 
-;; cl:ppcre で書き直せないか?
+(defun n-gram-ex (xs &optional (n 2))
+  (partition xs n 1))
+
+;; FIXME: cl:ppcre で書き直せないか?
 (defun split-by-char (string char)
   (loop for i = 0 then (1+ j)
      as j = (position char string :start i)
@@ -62,31 +65,11 @@ hkimura, 2016-07-07, 2016-07-08,
      while j))
 
 (defun split (string &optional (char #\Space))
-  "分かち書きされた文字列 string を charで区切ってリストにする。
+  "分かち書きした文字列 string を charで区切ってリストにする。
 char を省略した場合 #\Space で区切る。"
   (remove-if #'(lambda (s) (string= "" s)) (split-by-char string char)))
 
-(defvar *s* "髪 を 買っ て ください ます か。" )
-(split *s*)
-;;=> ("髪" "を" "買っ" "て" "ください" "ます" "か。")
-
-(defun n-gram-ex (xs &optional (n 2))
-  (partition xs n 1))
-
-;; (defun n-gram-ex (xs &optional (n 2))
-;;   "入力は単語のリストからなるリスト。"
-;;   (labels ((dup (n xs ret)
-;;              (let ((bt (rest xs)))
-;;                (if (= n 1) ret
-;;                    (dup (- n 1) bt (cons bt ret)))))
-;;            (n-gram-aux (m)
-;;              (if (null (car m)) nil
-;;                  (cons (mapcar #'car m)
-;;                        (n-gram-aux (mapcar #'cdr m))))))
-;;     (mapcar #'nreverse (n-gram-aux (dup n xs (list xs))))))
-
-(defvar *s2* "親譲り の 無鉄砲 で 小 供 の 時 から 損 ばかり し て いる 。" )
-
+;;(defvar *s2* "親譲り の 無鉄砲 で 小 供 の 時 から 損 ばかり し て いる 。" )
 ;; (n-gram-ex (split *s2*) 2)
 ;; ;; => (("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
 
@@ -121,6 +104,8 @@ char を省略した場合 #\Space で区切る。"
   (subseq s 0 1))
 
 (defvar *end* "。")
+
+;; ここは nreverse ではまずいだろ。
 (defun end? (word)
   (string= *end* (car (reverse word))))
 
@@ -143,10 +128,7 @@ char を省略した場合 #\Space で区切る。"
 
 (defun cat (ss)
   "文字列のリストを引数に取り、それらを連結した文字列を返す。"
-  (labels ((cat2 (a b)
-             (concatenate 'string a b)))
-    (if (null ss) ""
-        (cat2 (car ss) (cat (cdr ss))))))
+  (apply #'concatenate 'string ss))
 
 (defun display (ret)
   (cat (mapcar #'car ret)))
@@ -155,7 +137,12 @@ char を省略した場合 #\Space で区切る。"
 (load-dic-ex)
 
 (display (generate-ex "わたし"))
-(display (GENERATE-EX "髪"))
-(display (GENERATE-EX "櫛"))
-(display (GENERATE-EX "時計"))
+(display (generate-ex "髪"))
+(display (generate-ex "櫛"))
+(display (generate-ex "時計"))
+
+;; 動作を確認できたらまとめちゃってもいい。
+
+;; 会話にする。
+;; 音声入出力。
 
