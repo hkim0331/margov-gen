@@ -150,14 +150,11 @@ char を省略した場合 #\Space で区切る。"
   (run-cmd "/usr/bin/say" text))
 
 ;; first version, use temporaly file.
-;; 未完。
 ;; run-cmd ではパイプを使えない。
 ;; パイプでつないだコマンドをシェルスクリプトにしておくか。
 ;; with-input-from-string を使えないか？
 (defun mecab (text)
-  (let ((tmp "tempfile"))
-    )
-  )
+  (run-cmd "./mecab.sh" text))
 
 ;; 動作を確認できたらまとめちゃってもいい。
 ;; 一つの関数にまとめる。
