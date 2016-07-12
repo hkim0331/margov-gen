@@ -11,7 +11,7 @@
 all: 春.mecab 最後の一枚の葉.mecab 賢者の贈り物.mecab
 
 clean:
-	${RM} *~ *.txt *.mecab
+	${RM} *~ *.mecab
 
 
 

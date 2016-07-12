@@ -10,12 +10,16 @@
   "文字列 s から最初の1文字を除いた文字列を返す。"
   (subseq s 1))
 
+;; (defun cat (ss)
+;;     "文字列のリストを引数に取り、それらを連結した文字列を返す。"
+;;   (labels ((cat2 (a b)
+;;              (concatenate 'string a b)))
+;;     (if (null ss) ""
+;;         (cat2 (car ss) (cat (cdr ss))))))
+
 (defun cat (ss)
   "文字列のリストを引数に取り、それらを連結した文字列を返す。"
-  (labels ((cat2 (a b)
-             (concatenate 'string a b)))
-    (if (null ss) ""
-        (cat2 (car ss) (cat (cdr ss))))))
+  (apply #'concatenate 'string ss))
 
 (defun n-gram (s &optional (n 2))
   "文字列 s を n-グラム化したリストを返す。文字列は句点（。）で終わること。"
@@ -27,7 +31,7 @@
              (if (string= "" (car m)) nil
                  (cons (cat (mapcar #'top m))
                        (n-gram-aux (mapcar #'but-top m))))))
-    (mapcar #'reverse (n-gram-aux (dup n s (list s))))))
+    (mapcar #'nreverse (n-gram-aux (dup n s (list s))))))
 
 (defvar *dic* "dic.lisp")
 
@@ -92,7 +96,7 @@
            (cond
              ((end? word) (cons *end* (cons word ret)))
              (t (G (top (reverse  word)) (cons word ret)))))))
-    (reverse (G s nil))))
+    (nreverse (G s nil))))
 
 (defun display (xs)
   "n-gram リストの各要素先頭文字を連結。"
