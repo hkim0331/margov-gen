@@ -173,10 +173,10 @@ char を省略した場合 #\Space で区切る。"
   (display (generate-ex  (prompt-read prompt))))
 
 ;; 会話にする。
-(defun lets-talk (&optional (ngram #p "data/賢者の贈り物.mecab"))
-  (make-n-gram-ex ngram)
-  (load-dic-ex)
-  (loop (talk-1 "talk: ")
-     (if (not-y-or-n-p "continue? [y/n]: ")) (return)))
+;; (defun lets-talk (&optional (ngram #p "data/賢者の贈り物.mecab"))
+;;   (make-n-gram-ex ngram)
+;;   (load-dic-ex)
+;;   (loop (talk-1 "talk: ")
+;;      (if (not-y-or-n-p "continue? [y/n]: ")) (return)))
 
 
