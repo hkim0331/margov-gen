@@ -160,7 +160,7 @@ char を省略した場合 #\Space で区切る。"
 ;; 一つの関数にまとめる。
 
 (defun prompt-read (prompt)
-  (formt *query-io* "~a:" prompt)
+  (format *query-io* "~a:" prompt)
   (force-output *query-io*)
   (read-line *query-io*))
 
