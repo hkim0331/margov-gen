@@ -1,5 +1,4 @@
  #|
-
 分かち書きされた日本語文書から拡張 n-gram を作り、会話する。
 mecab により、分かち書きされたテキストファイルを入力とする。
 n-gram 化したリストの各要素は markov-talk では次になる。
@@ -11,7 +10,6 @@ n-gram-ex では次。
 (("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
 
 hkimura, 2016-07-07, 2016-07-08, 2016-07-09,
-
 |#
 
 (in-package :cl-user)
@@ -57,6 +55,7 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09,
                (PA (drop d xs) n d (cons head ret))))))
     (PA xs n d nil)))
 
+;; 拡張 n-gram。
 (defun n-gram-ex (xs &optional (n 2))
   (partition xs n 1))
 
@@ -139,14 +138,52 @@ char を省略した場合 #\Space で区切る。"
 (make-n-gram-ex #p"data/賢者の贈り物.mecab")
 (load-dic-ex)
 
+;; try.
 (display (generate-ex "わたし"))
 (display (generate-ex "髪"))
 (display (generate-ex "櫛"))
 (display (generate-ex "時計"))
 
+;; sbcl only
+(defun run-cmd (cmd &rest args)
+  (with-output-to-string (out)
+    (sb-ext:run-program cmd args :output out)))
+
+(defun say (text)
+  (run-cmd "/usr/bin/say" text))
+
+;; first version, use temporaly file.
+;; run-cmd ではパイプを使えない。
+;; パイプでつないだコマンドをシェルスクリプトにしておくか。
+;; with-input-from-string を使えないか？
+(defun mecab (text)
+  (run-cmd "./mecab.sh" text))
+
 ;; 動作を確認できたらまとめちゃってもいい。
+
 ;; 会話にする。
 (defun lets-talk (dic)
   )
 ;; 音声入出力。
 
+;; 一つの関数にまとめる。
+
+(defun prompt-read (prompt)
+  (formt *query-io* "~a:" prompt)
+  (force-output *query-io*)
+  (read-line *query-io*))
+
+;; n この候補を出し、入力文書と m 個以上共通項のある文書を出力する。
+;; ``共通''の意味は最初はひとまず``等しい''でよい。将来、``近い''に変更する。
+
+;; 引数を文、あるいは文中に含まれる ``文の特徴を表すワード''にしたい。
+(defun talk-1 (prompt)
+  "word を引いて文章を生成する。"
+  (display (generate-ex  (prompt-read prompt))))
+
+;; 会話にする。
+(defun lets-talk (&optional (ngram #p "data/賢者の贈り物.mecab"))
+  (make-n-gram-ex ngram)
+  (load-dic-ex)
+  (loop (talk-1 "talk: ")
+     (if (not-y-or-n-p "continue? [y/n]: ")) (return)))
