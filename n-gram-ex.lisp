@@ -47,6 +47,9 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09,
     (TK n xs nil)))
 
 (defun partition (xs n &optional (d n))
+  "リスト xs を n 個の要素をもつサブリストに分ける。
+(partition '(1 2 3 4) 2) => ((1 2) (3 4))
+(partition '(1 2 3 4) 2 1) => ((1 2) (2 3) (3 4))"
   (labels
       ((PA (xs n d ret)
          (let ((head (take n xs)))
@@ -142,7 +145,8 @@ char を省略した場合 #\Space で区切る。"
 (display (generate-ex "時計"))
 
 ;; 動作を確認できたらまとめちゃってもいい。
-
 ;; 会話にする。
+(defun lets-talk (dic)
+  )
 ;; 音声入出力。
 
