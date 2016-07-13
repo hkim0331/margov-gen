@@ -194,4 +194,4 @@ char を省略した場合 #\Space で区切る。"
   (make-n-gram-ex ngram)
   (load-dic-ex)
   (loop (talk-1 "talk: ")
-     (if (not-y-or-n-p "continue? [y/n]: ")) (return)))
+     (if (y-or-n-p "continue? [y/n]: ") (return))))
