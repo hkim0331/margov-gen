@@ -141,7 +141,7 @@ char を省略した場合 #\Space で区切る。"
 (display (generate-ex "櫛"))
 (display (generate-ex "時計"))
 
-;; sbcl only
+;; sbcl only.
 (defun run-cmd (cmd &rest args)
   (with-output-to-string (out)
     (sb-ext:run-program cmd args :output out)))
