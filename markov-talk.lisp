@@ -10,13 +10,6 @@
   "文字列 s から最初の1文字を除いた文字列を返す。"
   (subseq s 1))
 
-;; (defun cat (ss)
-;;     "文字列のリストを引数に取り、それらを連結した文字列を返す。"
-;;   (labels ((cat2 (a b)
-;;              (concatenate 'string a b)))
-;;     (if (null ss) ""
-;;         (cat2 (car ss) (cat (cdr ss))))))
-
 (defun cat (ss)
   "文字列のリストを引数に取り、それらを連結した文字列を返す。"
   (apply #'concatenate 'string ss))

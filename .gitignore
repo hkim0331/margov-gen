@@ -1,6 +1,4 @@
 dic.lisp
-temp.txt
-!sample.txt
+dic-ex.lisp
 data/*.txt
-data/*.wakati
 data/*.mecab
