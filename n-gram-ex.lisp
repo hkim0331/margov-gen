@@ -141,8 +141,45 @@ char を省略した場合 #\Space で区切る。"
 (display (generate-ex "櫛"))
 (display (generate-ex "時計"))
 
+;; sbcl only.
+(defun run-cmd (cmd &rest args)
+  (with-output-to-string (out)
+    (sb-ext:run-program cmd args :output out)))
+
+(defun say (text)
+  (run-cmd "/usr/bin/say" text))
+
+;; first version, use temporaly file.
+;; 未完。
+;; run-cmd ではパイプを使えない。
+;; パイプでつないだコマンドをシェルスクリプトにしておくか。
+;; with-input-from-string を使えないか？
+(defun mecab (text)
+  (let ((tmp "tempfile"))
+    )
+  )
+
 ;; 動作を確認できたらまとめちゃってもいい。
+;; 一つの関数にまとめる。
+
+(defun prompt-read (prompt)
+  (formt *query-io* "~a:" prompt)
+  (force-output *query-io*)
+  (read-line *query-io*))
+
+;; n この候補を出し、入力文書と m 個以上共通項のある文書を出力する。
+;; ``共通''の意味は最初はひとまず``等しい''でよい。将来、``近い''に変更する。
+
+;; 引数を文、あるいは文中に含まれる ``文の特徴を表すワード''にしたい。
+(defun talk-1 (prompt)
+  "word を引いて文章を生成する。"
+  (display (generate-ex  (prompt-read prompt))))
 
 ;; 会話にする。
-;; 音声入出力。
+(defun lets-talk (&optional (ngram #p "data/賢者の贈り物.mecab"))
+  (make-n-gram-ex ngram)
+  (load-dic-ex)
+  (loop (talk-1 "talk: ")
+     (if (not-y-or-n-p "continue? [y/n]: ")) (return)))
+
 
