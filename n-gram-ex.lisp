@@ -9,14 +9,16 @@ n-gram-ex では次。
 
 (("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
 
-hkimura, 2016-07-07, 2016-07-08, 2016-07-09,
+hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 |#
 
 (in-package :cl-user)
+(ql:quickload :cl-ppcre)
 (defpackage :n-gram-ex (:use :cl))
 (in-package :n-gram-ex)
 
 (defun range (i &optional j k)
+  "(range 5) => (0 1 2 3 4),(range 1 5) => (1 2 3 4),(range 1 5 2) => (1 3), etc."
   (labels
       ((RNG (from to step)
          (labels ((R (from to step ret)
@@ -29,12 +31,14 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09,
       (t (RNG i j k)))))
 
 (defun drop (n xs)
+  "リスト xs の先頭の n 要素を落とした要素を返す。"
   (cond
     ((zerop n) xs)
     ((null xs) nil)
     (t (drop (- n 1) (cdr xs)))))
 
 (defun take (n xs)
+  "リスト xs の先頭の n 要素を返す。"
   (labels
       ((TK (n xs ret)
          (cond
@@ -59,22 +63,6 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09,
 (defun n-gram-ex (xs &optional (n 2))
   (partition xs n 1))
 
-;; FIXME: cl:ppcre で書き直せないか?
-(defun split-by-char (string char)
-  (loop for i = 0 then (1+ j)
-     as j = (position char string :start i)
-     collect (subseq string i j)
-     while j))
-
-(defun split (string &optional (char #\Space))
-  "分かち書きした文字列 string を charで区切ってリストにする。
-char を省略した場合 #\Space で区切る。"
-  (remove-if #'(lambda (s) (string= "" s)) (split-by-char string char)))
-
-;;(defvar *s2* "親譲り の 無鉄砲 で 小 供 の 時 から 損 ばかり し て いる 。" )
-;; (n-gram-ex (split *s2*) 2)
-;; ;; => (("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
-
 (defvar *dic-ex* "dic-ex.lisp")
 
 ;;FIXME: ダサすぎ。もっといい解があるはず。
@@ -85,22 +73,29 @@ char を省略した場合 #\Space で区切る。"
       (with-open-file (out fname :direction :output)
         (print sexp out))))
 
+;;cl-ppcre:split で置き換え。
+;;enbug.
 (defun make-n-gram-ex (infile &optional (n 2))
-  "infile は分かち書きされた日本語テキストファイル。
-各行は句点（。）で終了していること。"
+  "infile は分かち書きされた日本語テキストファイル。各行は句点（。）で終了していること。
+各行を拡張 n-gram に変換し、 *dic-ex* で示すファイルに書き出す。"
   (with-open-file (in infile)
-    (loop for line = (read-line in nil) while line
-       do (unless (string= "" line)
-            (append-to-file (n-gram-ex (split line) n))))))
+    (loop
+       :for line = (read-line in nil)
+       :while line
+       :do (append-to-file (n-gram-ex (cl-ppcre:split "\\s" line) n)))))
 
 (defvar *n-gram-ex* nil)
 
+;;
 (defun load-dic-ex (&optional (fname *dic-ex*))
-  "ファイルにセーブした n-gram を *n-gram-ex* に読み込む。"
+  "fname ファイルにセーブした n-gram を *n-gram-ex* に読み込む。
+fname を省略すると *dic-ex* から読み込む。"
   (setf *n-gram-ex* nil)
   (with-open-file (in fname)
-    (loop for line = (read in nil) while line
-         do (setf *n-gram-ex* (nconc *n-gram-ex* line)))))
+    (loop
+       :for line = (read in nil)
+       :while line
+       :do (setf *n-gram-ex* (nconc line *n-gram-ex*)))))
 
 (defun top (s)
   (subseq s 0 1))
@@ -144,7 +139,7 @@ char を省略した場合 #\Space で区切る。"
 (display (generate-ex "櫛"))
 (display (generate-ex "時計"))
 
-;; sbcl only
+;; sbcl only.
 (defun run-cmd (cmd &rest args)
   (with-output-to-string (out)
     (sb-ext:run-program cmd args :output out)))
@@ -152,10 +147,10 @@ char を省略した場合 #\Space で区切る。"
 (defun say (text)
   (run-cmd "/usr/bin/say" text))
 
-;; first version, use temporaly file.
 ;; run-cmd ではパイプを使えない。
 ;; パイプでつないだコマンドをシェルスクリプトにしておくか。
 ;; with-input-from-string を使えないか？
+;; 1st version, using temporaly file.
 (defun mecab (text)
   (run-cmd "./mecab.sh" text))
 
@@ -182,16 +177,9 @@ char を省略した場合 #\Space で区切る。"
   (display (generate-ex  (prompt-read prompt))))
 
 ;; 会話にする。
-
-;; (defun lets-talk (&optional (ngram #p "data/賢者の贈り物.mecab"))
-;;   (make-n-gram-ex ngram)
-;;   (load-dic-ex)
-;;   (loop (talk-1 "talk: ")
-;;      (if (not-y-or-n-p "continue? [y/n]: ")) (return)))
-
-
 (defun lets-talk (&optional (ngram #p "data/賢者の贈り物.mecab"))
   (make-n-gram-ex ngram)
   (load-dic-ex)
-  (loop (talk-1 "talk: ")
+  (loop
+     (talk-1 "talk: ")
      (if (y-or-n-p "continue? [y/n]: ") (return))))
