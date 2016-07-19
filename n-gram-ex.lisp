@@ -65,16 +65,14 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 
 (defvar *dic-ex* "dic-ex.lisp")
 
-;;FIXME: ダサすぎ。もっといい解があるはず。
 (defun append-to-file (sexp &optional (fname *dic-ex*))
-  (if (probe-file fname)
-      (with-open-file (out fname :direction :output :if-exists :append)
-        (print sexp out))
-      (with-open-file (out fname :direction :output)
-        (print sexp out))))
+  (unless (probe-file fname)
+    (with-open-file (out fname :direction :output)))
+  (with-open-file (out fname :direction :output :if-exists :append)
+        (print sexp out)))
 
-;;cl-ppcre:split で置き換え。
-;;enbug.
+;;FIXME: 句点終了していなかったら、句点をアペンドする。
+;;FIXME: ファイル以外、標準入力から入力を取れるように。
 (defun make-n-gram-ex (infile &optional (n 2))
   "infile は分かち書きされた日本語テキストファイル。各行は句点（。）で終了していること。
 各行を拡張 n-gram に変換し、 *dic-ex* で示すファイルに書き出す。"
@@ -149,8 +147,6 @@ fname を省略すると *dic-ex* から読み込む。"
 
 ;; run-cmd ではパイプを使えない。
 ;; パイプでつないだコマンドをシェルスクリプトにしておくか。
-;; with-input-from-string を使えないか？
-;; 1st version, using temporaly file.
 (defun mecab (text)
   (run-cmd "./mecab.sh" text))
 
