@@ -93,27 +93,26 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
   (with-open-file (out fname :direction :output :if-exists :append)
         (print sexp out)))
 
-(defun n-gram-from-string (string)
+(defun n-gram-from-string (string &optional (n 2))
   "文字列 string を n-gram-ex 化したリストを返す。
 string が句点終了しない場合、句点を補う（つもり）。"
-  (n-gram-ex (cl-ppcre:split "\\s" (mecab string)) 2))
+  (n-gram-ex (cl-ppcre:split "\\s" (mecab string)) n))
 
-(defun n-gram-from-stream (st)
+(defun n-gram-from-stream (st &optional (n 2))
   "ストリーム st から一行読んで、n-gram-ex 化したリストを返す。"
   (let ((line (read-line st nil)))
     (if (null line) nil
-        (n-gram-from-string line))))
+        (n-gram-from-string line n))))
 
-;;FIXME: 句点終了していなかったら、句点をアペンドする。
-;;FIXME: ファイル以外、標準入力から入力を取れるように。
-(defun make-n-gram-ex (infile &optional (n 2))
+(defun n-gram-from-file (infile &optional (n 2))
   "infile は分かち書きされた日本語テキストファイル。各行は句点（。）で終了していること。
 各行を拡張 n-gram に変換し、 *dic-ex* で示すファイルに書き出す。"
   (with-open-file (in infile)
     (loop
        :for line = (read-line in nil)
        :while line
-       :do (append-to-file (n-gram-ex (cl-ppcre:split "\\s" line) n)))))
+       :do (append-to-file (n-gram-from-string line n)))))
+
 
 (defvar *n-gram-ex* nil)
 
