@@ -1,12 +1,11 @@
 #|
 分かち書きされた日本語文書から拡張 n-gram を作り、会話する。
 mecab により、分かち書きされたテキストファイルを入力とする。
-n-gram 化したリストの各要素は markov-talk では次になる。
 
+n-gram 化したリストの各要素は markov-talk では次になる。
 ("親譲" "譲り" "りの" "の無" "無鉄" "鉄砲" "砲で" "で小" "小供" "供の" "の時" "時か" "から" "ら損" "損ば" "ばか" "かり" "りし" "して" "てい" "いる" "る。")
 
 n-gram-ex では次。
-
 (("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
 
 hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
@@ -17,8 +16,31 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 (defpackage :n-gram-ex (:use :cl))
 (in-package :n-gram-ex)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; sbcl only.
+(defun run-cmd (cmd &rest args)
+  (with-output-to-string (out)
+    (sb-ext:run-program cmd args :output out)))
+
+(defun say (text)
+  (run-cmd "/usr/bin/say" text))
+
+;; run-cmd ではパイプを使えない。
+;; パイプでつないだコマンドをシェルスクリプトにしておくか。
+;;
+;;(mecab "今日は天気がいい。")
+;; "今日 は 天気 が いい 。 
+;; "
+;; 最後の空白と改行が余計。
+(defun mecab (text)
+   (run-cmd "./mecab.sh" text))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defun range (i &optional j k)
-  "(range 5) => (0 1 2 3 4),(range 1 5) => (1 2 3 4),(range 1 5 2) => (1 3), etc."
+  "連続またはステップごとの範囲。
+(range 5) => (0 1 2 3 4)
+(range 1 5) => (1 2 3 4)
+(range 1 5 2) => (1 3)"
   (labels
       ((RNG (from to step)
          (labels ((R (from to step ret)
@@ -70,6 +92,17 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
     (with-open-file (out fname :direction :output)))
   (with-open-file (out fname :direction :output :if-exists :append)
         (print sexp out)))
+
+(defun n-gram-from-string (string)
+  "文字列 string を n-gram-ex 化したリストを返す。
+string が句点終了しない場合、句点を補う（つもり）。"
+  (n-gram-ex (cl-ppcre:split "\\s" (mecab string)) 2))
+
+(defun n-gram-from-stream (st)
+  "ストリーム st から一行読んで、n-gram-ex 化したリストを返す。"
+  (let ((line (read-line st nil)))
+    (if (null line) nil
+        (n-gram-from-string line))))
 
 ;;FIXME: 句点終了していなかったら、句点をアペンドする。
 ;;FIXME: ファイル以外、標準入力から入力を取れるように。
@@ -136,19 +169,6 @@ fname を省略すると *dic-ex* から読み込む。"
 (display (generate-ex "髪"))
 (display (generate-ex "櫛"))
 (display (generate-ex "時計"))
-
-;; sbcl only.
-(defun run-cmd (cmd &rest args)
-  (with-output-to-string (out)
-    (sb-ext:run-program cmd args :output out)))
-
-(defun say (text)
-  (run-cmd "/usr/bin/say" text))
-
-;; run-cmd ではパイプを使えない。
-;; パイプでつないだコマンドをシェルスクリプトにしておくか。
-(defun mecab (text)
-  (run-cmd "./mecab.sh" text))
 
 ;; 動作を確認できたらまとめちゃってもいい。
 
