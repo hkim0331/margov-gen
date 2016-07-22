@@ -100,11 +100,12 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
   "文字列 string を n-gram-ex 化したリストを返す。"
   (n-gram-ex (cl-ppcre:split "\\s" (mecab string)) n))
 
-(defun n-gram-from-stream (st &optional (n 2))
-  "ストリーム st から一行読んで、n-gram-ex 化したリストを返す。"
-  (let ((line (read-line st nil)))
-    (if (null line) nil
-        (n-gram-from-string line n))))
+;; どこからも呼ばれていない。
+;; (defun n-gram-from-stream (st &optional (n 2))
+;;   "ストリーム st から一行読んで、n-gram-ex 化したリストを返す。"
+;;   (let ((line (read-line st nil)))
+;;     (if (null line) nil
+;;         (n-gram-from-string line n))))
 
 (defun n-gram-from-file (infile &optional (n 2))
   "infile は普通の日本語テキストファイル。
