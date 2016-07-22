@@ -97,6 +97,8 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 (defun mecab (text)
   (run-cmd
    (format nil "echo ~a | mecab --output-format-type=wakati" text)))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun n-gram-ex (xs &optional (n 2))
@@ -146,7 +148,6 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
        :do (append-to-file (n-gram-ex (cl-ppcre:split "\\s" line) n)))))
 
 (defvar *n-gram-ex* nil)
-
 ;;
 (defun load-dic-ex (&optional (fname *dic-ex*))
   "fname ファイルにセーブした n-gram を *n-gram-ex* に読み込む。
@@ -188,7 +189,6 @@ fname を省略すると *dic-ex* から読み込む。"
 ;; try.
 (make-n-gram-ex #p"data/賢者の贈り物.mecab")
 (load-dic-ex)
-
 (display (generate-ex "わたし"))
 (display (generate-ex "髪"))
 (display (generate-ex "櫛"))
@@ -196,17 +196,21 @@ fname を省略すると *dic-ex* から読み込む。"
 
 ;; 動作を確認できたらまとめちゃってもいい。
 
-;; 一つの関数にまとめる。
 (defun prompt-read (prompt)
-  (format *query-io* "~a:" prompt)
+  (format *query-io* "~a" prompt)
   (force-output *query-io*)
   (read-line *query-io*))
 
-;; n この候補を出し、入力文書と m 個以上共通項のある文書を出力する。
-;; ``共通''の意味は最初はひとまず``等しい''でよい。将来、``近い''に変更する。
+(defun is-start-kanji? (word)
+  "文字列 word の先頭文字が漢字かどうか。廣瀬のを盗む。"
+  (labels ((IN? (c low up) (and (<= low c) (<= c up))))
+    (let ((cc (char-code (coerce (subseq word 0 1) 'character))))
+      (IN? cc 19968 65280))))
 
 (defun key-word (string)
-  )
+  (first
+   (remove-if-not #'is-start-kanji?
+                  (cl-ppcre:split "\\s" (mecab string)))))
 
 ;; 引数を文、あるいは文中に含まれる ``文の特徴を表すワード''にしたい。
 (defun talk-1 (prompt)
@@ -214,9 +218,9 @@ fname を省略すると *dic-ex* から読み込む。"
   (display (generate-ex (key-word (prompt-read prompt)))))
 
 ;; 会話にする。
-(defun lets-talk (&optional (ngram #p "data/賢者の贈り物.mecab"))
+(defun lets-talk (&optional (ngram #p"data/賢者の贈り物.mecab"))
   (make-n-gram-ex ngram)
   (load-dic-ex)
   (loop
-     (talk-1 "talk: ")
-     (if (y-or-n-p "continue? [y/n]: ") (return))))
+     (say (talk-1 "talk: "))
+     (if (y-or-n-p "会話をやめますか?") (return))))
