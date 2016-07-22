@@ -12,28 +12,19 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 |#
 
 (in-package :cl-user)
-(ql:quickload :cl-ppcre)
+(ql:quickload '(cl-ppcre trivial-shell))
 (defpackage :n-gram-ex (:use :cl))
 (in-package :n-gram-ex)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; sbcl only.
-(defun run-cmd (cmd &rest args)
-  (with-output-to-string (out)
-    (sb-ext:run-program cmd args :output out)))
+;;
+;; utils
+;;
+(defun top (s)
+  (subseq s 0 1))
 
-(defun say (text)
-  (run-cmd "/usr/bin/say" text))
-
-;; run-cmd ではパイプを使えない。
-;; パイプでつないだコマンドをシェルスクリプトにしておく。
-;;(mecab "今日は天気がいい。")
-;; "今日 は 天気 が いい 。 
-;; "
-;; 最後の空白と改行が余計だが。
-(defun mecab (text)
-   (run-cmd "./mecab.sh" text))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun cat (ss)
+  "文字列のリストを引数に取り、それらを連結した文字列を返す。"
+  (apply #'concatenate 'string ss))
 
 (defun range (i &optional j k)
   "連続またはステップごとの範囲。
@@ -81,6 +72,33 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
                (PA (drop d xs) n d (cons head ret))))))
     (PA xs n d nil)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; sbcl only. use trivial-shell instead.
+;; (defun run-cmd (cmd &rest args)
+;;   (with-output-to-string (out)
+;;     (sb-ext:run-program cmd args :output out)))
+
+(defun run-cmd (cmd &rest args)
+  "コマンドを実行。コマンドを絶対パス指定するとエラー。"
+  (labels
+      ((L-TO-S (l)
+         (if (null l) ""
+             (concatenate 'string (car l) " " (L-TO-S (cdr l))))))
+    (trivial-shell:shell-command
+     (concatenate 'string cmd " " (L-TO-S args)))))
+
+(defun say (text)
+  (run-cmd "say" text))
+
+;;(mecab "今日は天気がいい。")
+;; "今日 は 天気 が いい 。 
+;; "
+;; 最後の空白と改行が余計。
+(defun mecab (text)
+  (run-cmd
+   (format nil "echo ~a | mecab --output-format-type=wakati" text)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defun n-gram-ex (xs &optional (n 2))
   (partition xs n 1))
 
@@ -110,6 +128,8 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 (defvar *dic-ex* "dic-ex.lisp")
 
 ;;FIXME: ダサっ。
+;;Compiler warnings for "/Users/hkim/workspace/markov-talk/n-gram-ex.lisp" :
+;;   In APPEND-TO-FILE: Unused lexical variable OUT
 (defun append-to-file (sexp &optional (fname *dic-ex*))
   (unless (probe-file fname)
     (with-open-file (out fname :direction :output)))
@@ -139,9 +159,6 @@ fname を省略すると *dic-ex* から読み込む。"
        :do (setf *n-gram-ex* (nconc line *n-gram-ex*)))))
 ;;;;;;;;
 
-(defun top (s)
-  (subseq s 0 1))
-
 (defvar *end* "。")
 
 ;; ここは nreverse ではまずいだろ。
@@ -165,10 +182,6 @@ fname を省略すると *dic-ex* から読み込む。"
              (t (G (car (reverse word)) (cons word ret)))))))
     (G w nil)))
 
-(defun cat (ss)
-  "文字列のリストを引数に取り、それらを連結した文字列を返す。"
-  (apply #'concatenate 'string ss))
-
 (defun display (ret)
   (cat (mapcar #'car ret)))
 
@@ -183,13 +196,7 @@ fname を省略すると *dic-ex* から読み込む。"
 
 ;; 動作を確認できたらまとめちゃってもいい。
 
-;; 会話にする。
-(defun lets-talk (dic)
-  )
-;; 音声入出力。
-
 ;; 一つの関数にまとめる。
-
 (defun prompt-read (prompt)
   (format *query-io* "~a:" prompt)
   (force-output *query-io*)
@@ -198,10 +205,13 @@ fname を省略すると *dic-ex* から読み込む。"
 ;; n この候補を出し、入力文書と m 個以上共通項のある文書を出力する。
 ;; ``共通''の意味は最初はひとまず``等しい''でよい。将来、``近い''に変更する。
 
+(defun key-word (string)
+  )
+
 ;; 引数を文、あるいは文中に含まれる ``文の特徴を表すワード''にしたい。
 (defun talk-1 (prompt)
   "word を引いて文章を生成する。"
-  (display (generate-ex  (prompt-read prompt))))
+  (display (generate-ex (key-word (prompt-read prompt)))))
 
 ;; 会話にする。
 (defun lets-talk (&optional (ngram #p "data/賢者の贈り物.mecab"))
