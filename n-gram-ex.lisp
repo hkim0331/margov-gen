@@ -9,6 +9,9 @@ n-gram-ex では次。
 (("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
 
 hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
+
+* 2016-07-22, 最初に読み込んだ辞書をもとに応答分を作成し、読み上げる。
+
 |#
 
 (in-package :cl-user)
@@ -72,14 +75,8 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
                (PA (drop d xs) n d (cons head ret))))))
     (PA xs n d nil)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; sbcl only. use trivial-shell instead.
-;; (defun run-cmd (cmd &rest args)
-;;   (with-output-to-string (out)
-;;     (sb-ext:run-program cmd args :output out)))
-
 (defun run-cmd (cmd &rest args)
-  "コマンドを実行。コマンドを絶対パス指定するとエラー。"
+  "コマンドを実行。コマンドを絶対パス指定するとエラーの理由は?"
   (labels
       ((L-TO-S (l)
          (if (null l) ""
@@ -90,14 +87,9 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 (defun say (text)
   (run-cmd "say" text))
 
-;;(mecab "今日は天気がいい。")
-;; "今日 は 天気 が いい 。 
-;; "
-;; 最後の空白と改行が余計。
 (defun mecab (text)
   (run-cmd
    (format nil "echo ~a | mecab --output-format-type=wakati" text)))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -129,9 +121,8 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 ;; old?
 (defvar *dic-ex* "dic-ex.lisp")
 
-;;FIXME: ダサっ。
-;;Compiler warnings for "/Users/hkim/workspace/markov-talk/n-gram-ex.lisp" :
-;;   In APPEND-TO-FILE: Unused lexical variable OUT
+;;FIXME: ダサいのきわみ。
+;;Compiler warnings: In APPEND-TO-FILE: Unused lexical variable OUT
 (defun append-to-file (sexp &optional (fname *dic-ex*))
   (unless (probe-file fname)
     (with-open-file (out fname :direction :output)))
@@ -139,8 +130,9 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
         (print sexp out)))
 
 (defun make-n-gram-ex (infile &optional (n 2))
-  "infile は分かち書きされた日本語テキストファイル。各行は句点（。）で終了していること。
-各行を拡張 n-gram に変換し、 *dic-ex* で示すファイルに書き出す。"
+  "infile は分かち書きされた日本語テキストファイル。
+各行は句点（。）で終了していること。
+各行を拡張 n-gram に変換し、*dic-ex* で示すファイルに書き出す。"
   (with-open-file (in infile)
     (loop
        :for line = (read-line in nil)
@@ -187,14 +179,12 @@ fname を省略すると *dic-ex* から読み込む。"
   (cat (mapcar #'car ret)))
 
 ;; try.
-(make-n-gram-ex #p"data/賢者の贈り物.mecab")
-(load-dic-ex)
-(display (generate-ex "わたし"))
-(display (generate-ex "髪"))
-(display (generate-ex "櫛"))
-(display (generate-ex "時計"))
-
-;; 動作を確認できたらまとめちゃってもいい。
+;; (make-n-gram-ex #p"data/賢者の贈り物.mecab")
+;; (load-dic-ex)
+;; (display (generate-ex "わたし"))
+;; (display (generate-ex "髪"))
+;; (display (generate-ex "櫛"))
+;; (display (generate-ex "時計"))
 
 (defun prompt-read (prompt)
   (format *query-io* "~a" prompt)
@@ -202,25 +192,32 @@ fname を省略すると *dic-ex* から読み込む。"
   (read-line *query-io*))
 
 (defun is-start-kanji? (word)
-  "文字列 word の先頭文字が漢字かどうか。廣瀬のを盗む。"
+  "文字列 word の先頭文字が漢字かどうか。廣瀬のプログラムを盗む。"
   (labels ((IN? (c low up) (and (<= low c) (<= c up))))
     (let ((cc (char-code (coerce (subseq word 0 1) 'character))))
       (IN? cc 19968 65280))))
 
+;; FIXME: first で決め打ちはよくない。乱数で揺らすか?
 (defun key-word (string)
   (first
-   (remove-if-not #'is-start-kanji?
-                  (cl-ppcre:split "\\s" (mecab string)))))
+   (remove-if-not #'is-start-kanji? (cl-ppcre:split "\\s" (mecab string)))))
 
-;; 引数を文、あるいは文中に含まれる ``文の特徴を表すワード''にしたい。
 (defun talk-1 (prompt)
-  "word を引いて文章を生成する。"
+  "質問文の言葉尻をとらえ、文章を生成する。"
   (display (generate-ex (key-word (prompt-read prompt)))))
 
 ;; 会話にする。
+;; FIXME: 質問文を辞書に動的に追加すること。
+;; FIXME: 動的に拡張された辞書をファイルにセーブすること。
 (defun lets-talk (&optional (ngram #p"data/賢者の贈り物.mecab"))
   (make-n-gram-ex ngram)
   (load-dic-ex)
   (loop
      (say (talk-1 "talk: "))
      (if (y-or-n-p "会話をやめますか?") (return))))
+;;
+;; お笑いの始まり。
+;;
+;;(lets-talk)
+
+
