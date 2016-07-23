@@ -109,6 +109,21 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 
 (defvar *n-gram-ex* (n-gram-from-file "sample.txt"))
 
+(defun load-lisp (fname)
+  (if (and (cl-ppcre:scan ".lisp$" fname) (probe-file fname))
+      (with-open-file (in fname)
+        (read in))
+      nil))
+
+(defun load-txt (fname)
+  (if (and (cl-ppcre:scan ".txt$" fname) (probe-file fname))
+      (n-gram-from-file fname)
+      nil))
+
+(defun load-db (fname)
+  (setf *n-gram-ex* nil)
+  (setf *n-gram-ex* (or (load-lisp fname) (load-txt fname) nil)))
+
 (defvar *end* "。")
 
 ;; ここは nreverse ではまずいだろ。
