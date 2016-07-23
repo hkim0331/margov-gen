@@ -1,9 +1,8 @@
 #|
 
-produce meaningless conversations by theory of markov-chain.
+produce meaningless conversations according to the theory of markov-chain.
 by hkimura,
-
-2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
+in 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 
 * 2016-07-22, 最初に読み込んだ辞書をもとに応答分を作成し、読み上げる。
 * 2016-07-23, 設計変更。ファイルに n-gram を書き出すのをやめる。
@@ -203,7 +202,6 @@ by hkimura,
      (if (y-or-n-p "会話をやめますか?") (return)))
   (db-save (concatenate 'string db ".lisp"))
   (format t "see you later.~%"))
-;;
+
 ;; お笑いの始まり。
-;;
 ;;(lets-talk)
