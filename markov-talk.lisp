@@ -107,7 +107,30 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
          :do (setf ret (nconc ret (n-gram-from-string line n)))))
     ret))
 
-(defvar *n-gram-ex* (n-gram-from-file "sample.txt"))
+;;(defvar *n-gram-ex* (n-gram-from-file "sample.txt"))
+(defvar *n-gram-ex*)
+
+;; base は拡張子を含まないファイル名。
+(defun db-load (&optional (base "db"))
+  "db.lisp, db.txt の順にデータを読み、あればそのファイルを読んで、
+*n-gram-ex* に 2-gram 化したリストをセットする。
+成功は t、失敗は nil を返す。"
+  (let ((lisp (concatenate 'string base ".lisp"))
+        (txt (concatenate 'string base ".txt")))
+    (cond
+      ((probe-file lisp)
+       (progn
+         (setf *n-gram-ex* (with-open-file (in lisp) (read in))) t))
+      ((probe-file txt)
+       (progn
+         (setf *n-gram-ex* (n-gram-from-file txt)) t))
+      (t nil))))
+
+;; t は余計か？
+(defun db-save (&optional (fname "db.lisp"))
+  (with-open-file (out fname :direction :output :if-exists :supersede)
+    (print *n-gram-ex* out))
+  t)
 
 (defvar *end* "。")
 
@@ -175,11 +198,13 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 ;; (talk-1 "? ")
 
 ;; 会話にする。
-;; FIXME: 拡張した辞書をセーブしてないよ。
 (defun lets-talk ()
+  (format t "now loading ...~%")
+  (db-load "db")
   (loop
      (say (talk-1 "talk: "))
      (if (y-or-n-p "会話をやめますか?") (return)))
+  (db-save "db.lisp")
   (format t "see you later.~%"))
 ;;
 ;; お笑いの始まり。
