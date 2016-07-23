@@ -11,6 +11,7 @@ n-gram-ex では次。
 hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 
 * 2016-07-22, 最初に読み込んだ辞書をもとに応答分を作成し、読み上げる。
+* 2016-07-23, 設計変更。ファイルに n-gram を書き出すのをやめる。
 
 |#
 
@@ -100,13 +101,6 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
   "文字列 string を n-gram-ex 化したリストを返す。"
   (n-gram-ex (cl-ppcre:split "\\s" (mecab string)) n))
 
-;; どこからも呼ばれていない。
-;; (defun n-gram-from-stream (st &optional (n 2))
-;;   "ストリーム st から一行読んで、n-gram-ex 化したリストを返す。"
-;;   (let ((line (read-line st nil)))
-;;     (if (null line) nil
-;;         (n-gram-from-string line n))))
-
 (defun n-gram-from-file (infile &optional (n 2))
   "infile は普通の日本語テキストファイル。
 各行を拡張 n-gram に変換し、一つのリストにまとめて返す。"
@@ -118,40 +112,7 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
          :do (setf ret (nconc ret (n-gram-from-string line n)))))
     ret))
 
-;;;;;;;;
-;; old?
-(defvar *dic-ex* "dic-ex.lisp")
-
-;;FIXME: ダサいのきわみ。
-;;Compiler warnings: In APPEND-TO-FILE: Unused lexical variable OUT
-(defun append-to-file (sexp &optional (fname *dic-ex*))
-  (unless (probe-file fname)
-    (with-open-file (out fname :direction :output)))
-  (with-open-file (out fname :direction :output :if-exists :append)
-        (print sexp out)))
-
-(defun make-n-gram-ex (infile &optional (n 2))
-  "infile は分かち書きされた日本語テキストファイル。
-各行は句点（。）で終了していること。
-各行を拡張 n-gram に変換し、*dic-ex* で示すファイルに書き出す。"
-  (with-open-file (in infile)
-    (loop
-       :for line = (read-line in nil)
-       :while line
-       :do (append-to-file (n-gram-ex (cl-ppcre:split "\\s" line) n)))))
-
-(defvar *n-gram-ex* nil)
-;;
-(defun load-dic-ex (&optional (fname *dic-ex*))
-  "fname ファイルにセーブした n-gram を *n-gram-ex* に読み込む。
-fname を省略すると *dic-ex* から読み込む。"
-  (setf *n-gram-ex* nil)
-  (with-open-file (in fname)
-    (loop
-       :for line = (read in nil)
-       :while line
-       :do (setf *n-gram-ex* (nconc line *n-gram-ex*)))))
-;;;;;;;;
+(defvar *n-gram-ex* (n-gram-from-file "sample.txt"))
 
 (defvar *end* "。")
 
@@ -180,12 +141,10 @@ fname を省略すると *dic-ex* から読み込む。"
   (cat (mapcar #'car ret)))
 
 ;; try.
-;; (make-n-gram-ex #p"data/賢者の贈り物.mecab")
-;; (load-dic-ex)
-;; (display (generate-ex "わたし"))
-;; (display (generate-ex "髪"))
-;; (display (generate-ex "櫛"))
-;; (display (generate-ex "時計"))
+;; (display (generate-ex "小銭"))
+;; (display (generate-ex "八百屋"))
+;; (display (generate-ex "非難"))
+;; (display (generate-ex "クリスマス"))
 
 (defun prompt-read (prompt)
   (format *query-io* "~a" prompt)
@@ -210,9 +169,7 @@ fname を省略すると *dic-ex* から読み込む。"
 ;; 会話にする。
 ;; FIXME: 質問文を辞書に動的に追加すること。
 ;; FIXME: 動的に拡張された辞書をファイルにセーブすること。
-(defun lets-talk (&optional (ngram #p"data/賢者の贈り物.mecab"))
-  (make-n-gram-ex ngram)
-  (load-dic-ex)
+(defun lets-talk ()
   (loop
      (say (talk-1 "talk: "))
      (if (y-or-n-p "会話をやめますか?") (return))))
