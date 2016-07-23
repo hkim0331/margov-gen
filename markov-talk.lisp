@@ -17,8 +17,8 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 
 (in-package :cl-user)
 (ql:quickload '(cl-ppcre trivial-shell))
-(defpackage :n-gram-ex (:use :cl))
-(in-package :n-gram-ex)
+(defpackage :markov-talk (:use :cl))
+(in-package :markov-talk)
 
 ;;
 ;; utils
@@ -120,8 +120,8 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 (defun end? (word)
   (string= *end* (car (reverse word))))
 
-(defun generate-ex (w &optional (dic *n-gram-ex*))
-  "スタートワード w から出現頻度にもとづき文を生成。
+(defun generate-ex (word &optional (dic *n-gram-ex*))
+  "スタートワード word から出現頻度にもとづき文を生成。
 候補が見つからない時は辞書からランダムにチョイス。"
   (labels
       ((G (w ret)
@@ -135,7 +135,7 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
              ((end? word) (nreverse (cons (list *end*) (cons word ret))))
               ;; not cdr. for use of 3-gram, 4-gram, etc.
              (t (G (car (reverse word)) (cons word ret)))))))
-    (G w nil)))
+    (G word nil)))
 
 (defun display (ret)
   (cat (mapcar #'car ret)))
@@ -157,18 +157,30 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
     (let ((cc (char-code (coerce (subseq word 0 1) 'character))))
       (IN? cc 19968 65280))))
 
+(defun words (string)
+  "文字列 string を空白文字で区切ったリストに変換"
+  (cl-ppcre:split "\\s" (mecab string)))
+
 ;; FIXME: first で決め打ちはよくない。乱数で揺らすか?
-(defun key-word (string)
-  (first
-   (remove-if-not #'is-start-kanji? (cl-ppcre:split "\\s" (mecab string)))))
+(defun key-word (words)
+  (first (remove-if-not #'is-start-kanji? words)))
+
+(defun extend-dic-by (ngram &optional (dic *n-gram-ex*))
+  (setf dic (nconc ngram dic)))
 
 (defun talk-1 (prompt)
-  "質問文の言葉尻をとらえ、文章を生成する。"
-  (display (generate-ex (key-word (prompt-read prompt)))))
+  "質問文の言葉尻をとらえ、文章を生成する。質問文を辞書に動的に追加する。"
+  (let* ((line (prompt-read prompt))
+         (key-word (key-word (words line))))
+    (prog1
+        (display (generate-ex key-word))
+      ;;FIXME
+      (setf *n-gram-ex* (nconc (n-gram-from-string line) *n-gram-ex*)))))
+
+;; try.
+;; (talk-1 "? ")
 
 ;; 会話にする。
-;; FIXME: 質問文を辞書に動的に追加すること。
-;; FIXME: 動的に拡張された辞書をファイルにセーブすること。
 (defun lets-talk ()
   (loop
      (say (talk-1 "talk: "))
@@ -177,5 +189,6 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 ;; お笑いの始まり。
 ;;
 ;;(lets-talk)
+
 
 
