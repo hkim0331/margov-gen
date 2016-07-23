@@ -1,14 +1,8 @@
 #|
-分かち書きされた日本語文書から拡張 n-gram を作り、会話する。
-mecab により、分かち書きされたテキストファイルを入力とする。
 
-n-gram 化したリストの各要素は markov-talk では次になる。
-("親譲" "譲り" "りの" "の無" "無鉄" "鉄砲" "砲で" "で小" "小供" "供の" "の時" "時か" "から" "ら損" "損ば" "ばか" "かり" "りし" "して" "てい" "いる" "る。")
-
-n-gram-ex では次。
-(("親譲り" "の") ("の" "無鉄砲") ("無鉄砲" "で") ("で" "小") ("小" "供") ("供" "の") ("の" "時") ("時" "から") ("から" "損") ("損" "ばかり") ("ばかり" "し") ("し" "て") ("て" "いる") ("いる" "。"))
-
-hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
+produce meaningless conversations according to the theory of markov-chain.
+by hkimura,
+in 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 
 * 2016-07-22, 最初に読み込んだ辞書をもとに応答分を作成し、読み上げる。
 * 2016-07-23, 設計変更。ファイルに n-gram を書き出すのをやめる。
@@ -20,6 +14,15 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 (defpackage :markov-talk (:use :cl))
 (in-package :markov-talk)
 
+;; constants
+
+;; 辞書。具体的には分かち書きした単語の 2-gram 化リスト。
+(defvar *n-gram-ex*)
+
+;; 文の終端となる文字列。句点。
+(defvar *end* "。")
+
+;; utilities
 (defun top (s)
   (subseq s 0 1))
 
@@ -89,6 +92,7 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
   (run-cmd
    (format nil "echo ~a | mecab --output-format-type=wakati" text)))
 
+;; n-gram functions
 (defun n-gram-ex (xs &optional (n 2))
   (partition xs n 1))
 
@@ -106,9 +110,6 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
          :while line
          :do (setf ret (nconc ret (n-gram-from-string line n)))))
     ret))
-
-;;(defvar *n-gram-ex* (n-gram-from-file "sample.txt"))
-(defvar *n-gram-ex*)
 
 ;; base は拡張子を含まないファイル名。
 (defun db-load (&optional (base "db"))
@@ -131,8 +132,6 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
   (with-open-file (out fname :direction :output :if-exists :supersede)
     (print *n-gram-ex* out))
   t)
-
-(defvar *end* "。")
 
 ;; ここは nreverse ではまずいだろ。
 (defun end? (word)
@@ -163,11 +162,6 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 ;; (display (generate-ex "八百屋"))
 ;; (display (generate-ex "クリスマス"))
 
-(defun prompt-read (prompt)
-  (format *query-io* "~a" prompt)
-  (force-output *query-io*)
-  (read-line *query-io*))
-
 (defun is-start-kanji? (word)
   "文字列 word の先頭文字が漢字かどうか。廣瀬のプログラムを盗む。"
   (labels ((IN? (c low up) (and (<= low c) (<= c up))))
@@ -182,8 +176,10 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 (defun key-word (words)
   (first (remove-if-not #'is-start-kanji? words)))
 
-(defun extend-dic-by (ngram &optional (dic *n-gram-ex*))
-  (setf dic (nconc ngram dic)))
+(defun prompt-read (prompt)
+  (format *query-io* "~a" prompt)
+  (force-output *query-io*)
+  (read-line *query-io*))
 
 (defun talk-1 (prompt)
   "質問文の言葉尻をとらえ、文章を生成する。質問文を辞書に動的に追加する。"
@@ -198,15 +194,14 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 ;; (talk-1 "? ")
 
 ;; 会話にする。
-(defun lets-talk ()
-  (format t "now loading ...~%")
-  (db-load "db")
+(defun lets-talk (&optional (db "db"))
+  (format t "now loading ~a ...~%" db)
+  (db-load db)
   (loop
      (say (talk-1 "talk: "))
      (if (y-or-n-p "会話をやめますか?") (return)))
-  (db-save "db.lisp")
+  (db-save (concatenate 'string db ".lisp"))
   (format t "see you later.~%"))
-;;
+
 ;; お笑いの始まり。
-;;
 ;;(lets-talk)
