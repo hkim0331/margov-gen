@@ -107,22 +107,27 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
          :do (setf ret (nconc ret (n-gram-from-string line n)))))
     ret))
 
-(defvar *n-gram-ex* (n-gram-from-file "sample.txt"))
+;;(defvar *n-gram-ex* (n-gram-from-file "sample.txt"))
+(defvar *n-gram-ex*)
 
-(defun load-lisp (fname)
-  (if (and (cl-ppcre:scan ".lisp$" fname) (probe-file fname))
-      (with-open-file (in fname)
-        (read in))
-      nil))
+(defun db-load (fname)
+  (labels ((from-lisp (fname)
+             (if (and (cl-ppcre:scan ".lisp$" fname) (probe-file fname))
+                 (with-open-file (in fname)
+                   (read in))
+                 nil))
+           (from-txt (fname)
+             (if (and (cl-ppcre:scan ".txt$" fname) (probe-file fname))
+                 (n-gram-from-file fname)
+                 nil)))
+    (setf *n-gram-ex* nil)
+    (setf *n-gram-ex* (or (from-lisp fname) (from-txt fname) nil))
+    t))
 
-(defun load-txt (fname)
-  (if (and (cl-ppcre:scan ".txt$" fname) (probe-file fname))
-      (n-gram-from-file fname)
-      nil))
-
-(defun load-db (fname)
-  (setf *n-gram-ex* nil)
-  (setf *n-gram-ex* (or (load-lisp fname) (load-txt fname) nil)))
+(defun db-save (&optional fname)
+  (with-open-file (out fname :direction :output :if-exists :supersede)
+    (print *n-gram-ex* out))
+  t)
 
 (defvar *end* "。")
 
@@ -192,9 +197,11 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 ;; 会話にする。
 ;; FIXME: 拡張した辞書をセーブしてないよ。
 (defun lets-talk ()
+  (db-load "db.txt")
   (loop
      (say (talk-1 "talk: "))
      (if (y-or-n-p "会話をやめますか?") (return)))
+  (db-save "db.lisp")
   (format t "see you later.~%"))
 ;;
 ;; お笑いの始まり。
