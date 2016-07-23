@@ -20,9 +20,6 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 (defpackage :markov-talk (:use :cl))
 (in-package :markov-talk)
 
-;;
-;; utils
-;;
 (defun top (s)
   (subseq s 0 1))
 
@@ -92,8 +89,6 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
   (run-cmd
    (format nil "echo ~a | mecab --output-format-type=wakati" text)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defun n-gram-ex (xs &optional (n 2))
   (partition xs n 1))
 
@@ -143,7 +138,6 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 ;; try.
 ;; (display (generate-ex "小銭"))
 ;; (display (generate-ex "八百屋"))
-;; (display (generate-ex "非難"))
 ;; (display (generate-ex "クリスマス"))
 
 (defun prompt-read (prompt)
@@ -174,7 +168,7 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
          (key-word (key-word (words line))))
     (prog1
         (display (generate-ex key-word))
-      ;;FIXME
+      ;;FIXME, グローバル変数が丸見え。よくない。
       (setf *n-gram-ex* (nconc (n-gram-from-string line) *n-gram-ex*)))))
 
 ;; try.
@@ -189,6 +183,3 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 ;; お笑いの始まり。
 ;;
 ;;(lets-talk)
-
-
-
