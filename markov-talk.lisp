@@ -175,10 +175,12 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 ;; (talk-1 "? ")
 
 ;; 会話にする。
+;; FIXME: 拡張した辞書をセーブしてないよ。
 (defun lets-talk ()
   (loop
      (say (talk-1 "talk: "))
-     (if (y-or-n-p "会話をやめますか?") (return))))
+     (if (y-or-n-p "会話をやめますか?") (return)))
+  (format t "see you later.~%"))
 ;;
 ;; お笑いの始まり。
 ;;
