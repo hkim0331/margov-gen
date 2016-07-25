@@ -180,9 +180,13 @@ talk: 質問テキストを入力する。
   "文字列 string を空白文字で区切ったリストに変換"
   (cl-ppcre:split "\\s" (mecab string)))
 
-;; FIXME: first で決め打ちするより、乱数で揺らすか?
+(defun choose-random (xs)
+  (if (null xs) nil
+      (nth (random (length xs)) xs)))
+
 (defun key-word (words)
-  (first (remove-if-not #'is-start-kanji? words)))
+  "words に含まれる漢字で始まる word を選択。"
+  (choose-random (remove-if-not #'is-start-kanji? words)))
 
 (defun prompt-read (prompt)
   (format *query-io* "~a" prompt)
