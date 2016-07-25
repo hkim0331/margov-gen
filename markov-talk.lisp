@@ -1,11 +1,19 @@
 #|
 
-produce meaningless conversations according to the theory of markov-chain.
-by hkimura,
+produce meaningless conversation outputs
+according to the theory of markov-chain.
+
 in 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 
-* 2016-07-22, 最初に読み込んだ辞書をもとに応答分を作成し、読み上げる。
+* 2016-07-22, 最初に読み込んだ辞書をもとに応答文を作成し、読み上げる。
 * 2016-07-23, 設計変更。ファイルに n-gram を書き出すのをやめる。
+
+usage:
+cl> (load "./markov-talk.lisp")
+cl>(lets-talk)
+talk: 質問テキストを入力する。
+//音声が流れる
+会話をやめますか? (y or n)
 
 |#
 
@@ -172,7 +180,7 @@ in 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
   "文字列 string を空白文字で区切ったリストに変換"
   (cl-ppcre:split "\\s" (mecab string)))
 
-;; FIXME: first で決め打ちはよくない。乱数で揺らすか?
+;; FIXME: first で決め打ちするより、乱数で揺らすか?
 (defun key-word (words)
   (first (remove-if-not #'is-start-kanji? words)))
 

@@ -1,4 +1,2 @@
-dic.lisp
-dic-ex.lisp
-data/*.txt
-data/*.mecab
+db.lisp
+utils/*.mecab
