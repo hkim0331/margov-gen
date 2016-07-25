@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # coding: utf-8
-# 行が読点で終わるようにする。
+# 行が句点（。）で終わるようにする。
+# どこで使う？
 
 buf = ""
 while (line = STDIN.gets)
