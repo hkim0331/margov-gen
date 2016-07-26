@@ -1,3 +1,7 @@
+;;
+;; base program for markov-talk.
+;; char-by-char 2-gram.
+;;
 (in-package :cl-user)
 (defpackage :markov-talk (:use :cl))
 (in-package :markov-talk)
