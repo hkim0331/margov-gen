@@ -73,14 +73,15 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
                (PA (drop d xs) n d (cons head ret))))))
     (PA xs n d nil)))
 
+;; FIXME: もっとスマートなコードに。
 (defun run-cmd (cmd &rest args)
-  "コマンドを実行。コマンドを絶対パス指定するとエラーの理由は?"
+  "コマンドを実行。コマンドを絶対パスで与えるとエラー。理由は？"
   (labels
-      ((L-TO-S (l)
+      ((concat (l)
          (if (null l) ""
-             (concatenate 'string (car l) " " (L-TO-S (cdr l))))))
+             (concatenate 'string (car l) " " (concat (cdr l))))))
     (trivial-shell:shell-command
-     (concatenate 'string cmd " " (L-TO-S args)))))
+     (concatenate 'string cmd " " (concat args)))))
 
 (defun say (text)
   (run-cmd "say" text))
@@ -88,6 +89,8 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
 (defun mecab (text)
   (run-cmd
    (format nil "echo ~a | mecab --output-format-type=wakati" text)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun n-gram-ex (xs &optional (n 2))
   (partition xs n 1))
@@ -107,11 +110,12 @@ hkimura, 2016-07-07, 2016-07-08, 2016-07-09, 2016-07-18,
          :do (setf ret (nconc ret (n-gram-from-string line n)))))
     ret))
 
-(defvar *n-gram-ex* (n-gram-from-file "sample.txt"))
+(defvar *n-gram-ex*)
 
 (defvar *end* "。")
 
 ;; ここは nreverse ではまずいだろ。
+;; CHECK (car (reverse )) は余計か？
 (defun end? (word)
   (string= *end* (car (reverse word))))
 
